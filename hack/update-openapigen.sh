@@ -22,7 +22,10 @@ go run k8s.io/kube-openapi/cmd/openapi-gen \
     --input-dirs ./pkg/apis/pipeline/v1beta1,./pkg/apis/pipeline/pod,./pkg/apis/resource/v1alpha1,knative.dev/pkg/apis,knative.dev/pkg/apis/duck/v1beta1 \
     --output-package ./pkg/apis/pipeline/v1beta1 -o ./ \
     --go-header-file hack/boilerplate/boilerplate.go.txt >> /dev/null
+go run k8s.io/kube-openapi/cmd/openapi-gen \
+    --input-dirs ./pkg/apis/pipeline/v1ahpla1,./pkg/apis/pipeline/pod,./pkg/apis/resource/v1alpha1,knative.dev/pkg/apis,knative.dev/pkg/apis/duck/v1beta1 \
+    --output-package ./pkg/apis/pipeline/v1alpha1 -o ./ \
+    --go-header-file hack/boilerplate/boilerplate.go.txt >> /dev/null
 
 echo "Generating swagger file ..."
 go run hack/spec-gen/main.go v0.17.2 > pkg/apis/pipeline/v1beta1/swagger.json
-

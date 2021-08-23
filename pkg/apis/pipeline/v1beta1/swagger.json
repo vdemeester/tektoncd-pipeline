@@ -7,7 +7,7 @@
   },
   "paths": {},
   "definitions": {
-    "pod.Template": {
+    "tektoncd.pipeline.pkg.apis.pipeline.pod.Template": {
       "description": "PodTemplate holds pod specific configuration",
       "type": "object",
       "properties": {
@@ -95,172 +95,7 @@
         }
       }
     },
-    "v1alpha1.PipelineResource": {
-      "description": "PipelineResource describes a resource that is an input to or output from a Task.",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ObjectMeta"
-        },
-        "spec": {
-          "description": "Spec holds the desired state of the PipelineResource from the client",
-          "default": {},
-          "$ref": "#/definitions/v1alpha1.PipelineResourceSpec"
-        },
-        "status": {
-          "description": "Status is deprecated. It usually is used to communicate the observed state of the PipelineResource from the controller, but was unused as there is no controller for PipelineResource.",
-          "$ref": "#/definitions/v1alpha1.PipelineResourceStatus"
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceList": {
-      "description": "PipelineResourceList contains a list of PipelineResources",
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.PipelineResource"
-          }
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ListMeta"
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceSpec": {
-      "description": "PipelineResourceSpec defines  an individual resources used in the pipeline.",
-      "type": "object",
-      "required": [
-        "type",
-        "params"
-      ],
-      "properties": {
-        "description": {
-          "description": "Description is a user-facing description of the resource that may be used to populate a UI.",
-          "type": "string"
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.ResourceParam"
-          }
-        },
-        "secrets": {
-          "description": "Secrets to fetch to populate some of resource fields",
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.SecretParam"
-          }
-        },
-        "type": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceStatus": {
-      "description": "PipelineResourceStatus does not contain anything because PipelineResources on their own do not have a status Deprecated",
-      "type": "object"
-    },
-    "v1alpha1.ResourceDeclaration": {
-      "description": "ResourceDeclaration defines an input or output PipelineResource declared as a requirement by another type such as a Task or Condition. The Name field will be used to refer to these PipelineResources within the type's definition, and when provided as an Input, the Name will be the path to the volume mounted containing this PipelineResource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).",
-      "type": "object",
-      "required": [
-        "name",
-        "type"
-      ],
-      "properties": {
-        "description": {
-          "description": "Description is a user-facing description of the declared resource that may be used to populate a UI.",
-          "type": "string"
-        },
-        "name": {
-          "description": "Name declares the name by which a resource is referenced in the definition. Resources may be referenced by name in the definition of a Task's steps.",
-          "type": "string",
-          "default": ""
-        },
-        "optional": {
-          "description": "Optional declares the resource as optional. By default optional is set to false which makes a resource required. optional: true - the resource is considered optional optional: false - the resource is considered required (equivalent of not specifying it)",
-          "type": "boolean"
-        },
-        "targetPath": {
-          "description": "TargetPath is the path in workspace directory where the resource will be copied.",
-          "type": "string"
-        },
-        "type": {
-          "description": "Type is the type of this resource;",
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.ResourceParam": {
-      "description": "ResourceParam declares a string value to use for the parameter called Name, and is used in the specific context of PipelineResources.",
-      "type": "object",
-      "required": [
-        "name",
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "default": ""
-        },
-        "value": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.SecretParam": {
-      "description": "SecretParam indicates which secret can be used to populate a field of the resource",
-      "type": "object",
-      "required": [
-        "fieldName",
-        "secretKey",
-        "secretName"
-      ],
-      "properties": {
-        "fieldName": {
-          "type": "string",
-          "default": ""
-        },
-        "secretKey": {
-          "type": "string",
-          "default": ""
-        },
-        "secretName": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1beta1.ArrayOrString": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ArrayOrString": {
       "description": "ArrayOrString is a type that can hold a single string or string array. Used in JSON unmarshalling so that a single JSON field can accept either an individual string or an array of strings.",
       "type": "object",
       "required": [
@@ -287,7 +122,7 @@
         }
       }
     },
-    "v1beta1.CannotConvertError": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CannotConvertError": {
       "description": "CannotConvertError is returned when a field cannot be converted.",
       "type": "object",
       "required": [
@@ -305,13 +140,13 @@
         }
       }
     },
-    "v1beta1.CloudEventDelivery": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CloudEventDelivery": {
       "description": "CloudEventDelivery is the target of a cloud event along with the state of delivery.",
       "type": "object",
       "properties": {
         "status": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.CloudEventDeliveryState"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CloudEventDeliveryState"
         },
         "target": {
           "description": "Target points to an addressable",
@@ -319,7 +154,7 @@
         }
       }
     },
-    "v1beta1.CloudEventDeliveryState": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CloudEventDeliveryState": {
       "description": "CloudEventDeliveryState reports the state of a cloud event to be sent.",
       "type": "object",
       "required": [
@@ -348,7 +183,7 @@
         }
       }
     },
-    "v1beta1.ClusterTask": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ClusterTask": {
       "description": "ClusterTask is a Task with a cluster scope. ClusterTasks are used to represent Tasks that should be publicly addressable from any namespace in the cluster.",
       "type": "object",
       "properties": {
@@ -367,11 +202,11 @@
         "spec": {
           "description": "Spec holds the desired state of the Task from the client",
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec"
         }
       }
     },
-    "v1beta1.ClusterTaskList": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ClusterTaskList": {
       "description": "ClusterTaskList contains a list of ClusterTask",
       "type": "object",
       "required": [
@@ -386,7 +221,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.ClusterTask"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ClusterTask"
           }
         },
         "kind": {
@@ -399,7 +234,7 @@
         }
       }
     },
-    "v1beta1.ConditionCheck": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ConditionCheck": {
       "description": "ConditionCheck represents a single evaluation of a Condition step.",
       "type": "object",
       "properties": {
@@ -417,15 +252,15 @@
         },
         "spec": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskRunSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunSpec"
         },
         "status": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskRunStatus"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus"
         }
       }
     },
-    "v1beta1.ConditionCheckStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ConditionCheckStatus": {
       "description": "ConditionCheckStatus defines the observed state of ConditionCheck",
       "type": "object",
       "required": [
@@ -475,7 +310,7 @@
         }
       }
     },
-    "v1beta1.ConditionCheckStatusFields": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ConditionCheckStatusFields": {
       "description": "ConditionCheckStatusFields holds the fields of ConfigurationCheck's status. This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
       "type": "object",
       "required": [
@@ -502,7 +337,7 @@
         }
       }
     },
-    "v1beta1.EmbeddedTask": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.EmbeddedTask": {
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -517,26 +352,26 @@
         },
         "metadata": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.PipelineTaskMetadata"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskMetadata"
         },
         "params": {
           "description": "Params is a list of input parameters required to run the task. Params must be supplied as inputs in TaskRuns unless they declare a default value.",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.ParamSpec"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ParamSpec"
           }
         },
         "resources": {
           "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.",
-          "$ref": "#/definitions/v1beta1.TaskResources"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResources"
         },
         "results": {
           "description": "Results are values that this Task can output",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResult"
           }
         },
         "sidecars": {
@@ -544,7 +379,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Sidecar"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Sidecar"
           }
         },
         "spec": {
@@ -561,7 +396,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Step"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Step"
           }
         },
         "volumes": {
@@ -577,12 +412,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceDeclaration"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceDeclaration"
           }
         }
       }
     },
-    "v1beta1.InternalTaskModifier": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.InternalTaskModifier": {
       "description": "InternalTaskModifier implements TaskModifier for resources that are built-in to Tekton Pipelines.",
       "type": "object",
       "required": [
@@ -595,14 +430,14 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Step"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Step"
           }
         },
         "StepsToPrepend": {
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Step"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Step"
           }
         },
         "Volumes": {
@@ -614,7 +449,7 @@
         }
       }
     },
-    "v1beta1.Param": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param": {
       "description": "Param declares an ArrayOrString to use for the parameter called name.",
       "type": "object",
       "required": [
@@ -628,11 +463,11 @@
         },
         "value": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ArrayOrString"
         }
       }
     },
-    "v1beta1.ParamSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ParamSpec": {
       "description": "ParamSpec defines arbitrary parameters needed beyond typed inputs (such as resources). Parameter values are provided by users as inputs on a TaskRun or PipelineRun.",
       "type": "object",
       "required": [
@@ -641,7 +476,7 @@
       "properties": {
         "default": {
           "description": "Default is the value a parameter takes if no input value is supplied. If default is set, a Task may be executed without a supplied value for the parameter.",
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ArrayOrString"
         },
         "description": {
           "description": "Description is a user-facing description of the parameter that may be used to populate a UI.",
@@ -658,7 +493,7 @@
         }
       }
     },
-    "v1beta1.Pipeline": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Pipeline": {
       "description": "Pipeline describes a list of Tasks to execute. It expresses how outputs of tasks feed into inputs of subsequent tasks.",
       "type": "object",
       "properties": {
@@ -677,11 +512,11 @@
         "spec": {
           "description": "Spec holds the desired state of the Pipeline from the client",
           "default": {},
-          "$ref": "#/definitions/v1beta1.PipelineSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineSpec"
         }
       }
     },
-    "v1beta1.PipelineDeclaredResource": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineDeclaredResource": {
       "description": "PipelineDeclaredResource is used by a Pipeline to declare the types of the PipelineResources that it will required to run and names which can be used to refer to these PipelineResources in PipelineTaskResourceBindings.",
       "type": "object",
       "required": [
@@ -705,7 +540,7 @@
         }
       }
     },
-    "v1beta1.PipelineList": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineList": {
       "description": "PipelineList contains a list of Pipeline",
       "type": "object",
       "required": [
@@ -720,7 +555,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Pipeline"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Pipeline"
           }
         },
         "kind": {
@@ -733,7 +568,7 @@
         }
       }
     },
-    "v1beta1.PipelineRef": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRef": {
       "description": "PipelineRef can be used to refer to a specific instance of a Pipeline. Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64",
       "type": "object",
       "properties": {
@@ -751,7 +586,7 @@
         }
       }
     },
-    "v1beta1.PipelineResourceBinding": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceBinding": {
       "description": "PipelineResourceBinding connects a reference to an instance of a PipelineResource with a PipelineResource dependency that the Pipeline has declared",
       "type": "object",
       "properties": {
@@ -761,7 +596,7 @@
         },
         "resourceRef": {
           "description": "ResourceRef is a reference to the instance of the actual PipelineResource that should be used",
-          "$ref": "#/definitions/v1beta1.PipelineResourceRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceRef"
         },
         "resourceSpec": {
           "description": "ResourceSpec is specification of a resource that should be created and consumed by the task",
@@ -769,7 +604,7 @@
         }
       }
     },
-    "v1beta1.PipelineResourceRef": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceRef": {
       "description": "PipelineResourceRef can be used to refer to a specific instance of a Resource",
       "type": "object",
       "properties": {
@@ -783,7 +618,7 @@
         }
       }
     },
-    "v1beta1.PipelineResourceResult": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceResult": {
       "description": "PipelineResourceResult used to export the image name and digest as json",
       "type": "object",
       "required": [
@@ -800,7 +635,7 @@
         },
         "resourceRef": {
           "description": "The field ResourceRef should be deprecated and removed in the next API version. See https://github.com/tektoncd/pipeline/issues/2694 for more information.",
-          "$ref": "#/definitions/v1beta1.PipelineResourceRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceRef"
         },
         "type": {
           "type": "string"
@@ -811,7 +646,7 @@
         }
       }
     },
-    "v1beta1.PipelineResult": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResult": {
       "description": "PipelineResult used to describe the results of a pipeline",
       "type": "object",
       "required": [
@@ -836,7 +671,7 @@
         }
       }
     },
-    "v1beta1.PipelineRun": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRun": {
       "description": "PipelineRun represents a single execution of a Pipeline. PipelineRuns are how the graph of Tasks declared in a Pipeline are executed; they specify inputs to Pipelines such as parameter values and capture operational aspects of the Tasks execution such as service account and tolerations. Creating a PipelineRun creates TaskRuns for Tasks in the referenced Pipeline.",
       "type": "object",
       "properties": {
@@ -854,15 +689,15 @@
         },
         "spec": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.PipelineRunSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunSpec"
         },
         "status": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.PipelineRunStatus"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunStatus"
         }
       }
     },
-    "v1beta1.PipelineRunConditionCheckStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunConditionCheckStatus": {
       "description": "PipelineRunConditionCheckStatus returns the condition check status",
       "type": "object",
       "properties": {
@@ -872,11 +707,11 @@
         },
         "status": {
           "description": "Status is the ConditionCheckStatus for the corresponding ConditionCheck",
-          "$ref": "#/definitions/v1beta1.ConditionCheckStatus"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ConditionCheckStatus"
         }
       }
     },
-    "v1beta1.PipelineRunList": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunList": {
       "description": "PipelineRunList contains a list of PipelineRun",
       "type": "object",
       "properties": {
@@ -888,7 +723,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineRun"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRun"
           }
         },
         "kind": {
@@ -901,7 +736,7 @@
         }
       }
     },
-    "v1beta1.PipelineRunResult": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunResult": {
       "description": "PipelineRunResult used to describe the results of a pipeline",
       "type": "object",
       "required": [
@@ -921,7 +756,7 @@
         }
       }
     },
-    "v1beta1.PipelineRunRunStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunRunStatus": {
       "description": "PipelineRunRunStatus contains the name of the PipelineTask for this Run and the Run's Status",
       "type": "object",
       "properties": {
@@ -938,12 +773,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WhenExpression"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WhenExpression"
           }
         }
       }
     },
-    "v1beta1.PipelineRunSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunSpec": {
       "description": "PipelineRunSpec defines the desired state of PipelineRun",
       "type": "object",
       "properties": {
@@ -952,14 +787,14 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param"
           }
         },
         "pipelineRef": {
-          "$ref": "#/definitions/v1beta1.PipelineRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRef"
         },
         "pipelineSpec": {
-          "$ref": "#/definitions/v1beta1.PipelineSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineSpec"
         },
         "podTemplate": {
           "description": "PodTemplate holds pod specific configuration",
@@ -970,7 +805,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResourceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceBinding"
           }
         },
         "serviceAccountName": {
@@ -981,7 +816,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineRunSpecServiceAccountName"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunSpecServiceAccountName"
           }
         },
         "status": {
@@ -993,7 +828,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTaskRunSpec"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskRunSpec"
           }
         },
         "timeout": {
@@ -1002,19 +837,19 @@
         },
         "timeouts": {
           "description": "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nTime after which the Pipeline times out. Currently three keys are accepted in the map pipeline, tasks and finally with Timeouts.pipeline \u003e= Timeouts.tasks + Timeouts.finally",
-          "$ref": "#/definitions/v1beta1.TimeoutFields"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TimeoutFields"
         },
         "workspaces": {
           "description": "Workspaces holds a set of workspace bindings that must match names with those declared in the pipeline.",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceBinding"
           }
         }
       }
     },
-    "v1beta1.PipelineRunSpecServiceAccountName": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunSpecServiceAccountName": {
       "description": "PipelineRunSpecServiceAccountName can be used to configure specific ServiceAccountName for a concrete Task",
       "type": "object",
       "properties": {
@@ -1026,7 +861,7 @@
         }
       }
     },
-    "v1beta1.PipelineRunStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunStatus": {
       "description": "PipelineRunStatus defines the observed state of PipelineRun",
       "type": "object",
       "properties": {
@@ -1062,18 +897,18 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineRunResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunResult"
           }
         },
         "pipelineSpec": {
           "description": "PipelineRunSpec contains the exact spec used to instantiate the run",
-          "$ref": "#/definitions/v1beta1.PipelineSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineSpec"
         },
         "runs": {
           "description": "map of PipelineRunRunStatus with the run name as the key",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/v1beta1.PipelineRunRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunRunStatus"
           }
         },
         "skippedTasks": {
@@ -1081,7 +916,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.SkippedTask"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SkippedTask"
           }
         },
         "startTime": {
@@ -1092,12 +927,12 @@
           "description": "map of PipelineRunTaskRunStatus with the taskRun name as the key",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/v1beta1.PipelineRunTaskRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunTaskRunStatus"
           }
         }
       }
     },
-    "v1beta1.PipelineRunStatusFields": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunStatusFields": {
       "description": "PipelineRunStatusFields holds the fields of PipelineRunStatus' status. This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
       "type": "object",
       "properties": {
@@ -1110,18 +945,18 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineRunResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunResult"
           }
         },
         "pipelineSpec": {
           "description": "PipelineRunSpec contains the exact spec used to instantiate the run",
-          "$ref": "#/definitions/v1beta1.PipelineSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineSpec"
         },
         "runs": {
           "description": "map of PipelineRunRunStatus with the run name as the key",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/v1beta1.PipelineRunRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunRunStatus"
           }
         },
         "skippedTasks": {
@@ -1129,7 +964,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.SkippedTask"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SkippedTask"
           }
         },
         "startTime": {
@@ -1140,12 +975,12 @@
           "description": "map of PipelineRunTaskRunStatus with the taskRun name as the key",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/v1beta1.PipelineRunTaskRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunTaskRunStatus"
           }
         }
       }
     },
-    "v1beta1.PipelineRunTaskRunStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunTaskRunStatus": {
       "description": "PipelineRunTaskRunStatus contains the name of the PipelineTask for this TaskRun and the TaskRun's Status",
       "type": "object",
       "properties": {
@@ -1153,7 +988,7 @@
           "description": "ConditionChecks maps the name of a condition check to its Status",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/v1beta1.PipelineRunConditionCheckStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineRunConditionCheckStatus"
           }
         },
         "pipelineTaskName": {
@@ -1162,19 +997,19 @@
         },
         "status": {
           "description": "Status is the TaskRunStatus for the corresponding TaskRun",
-          "$ref": "#/definitions/v1beta1.TaskRunStatus"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus"
         },
         "whenExpressions": {
           "description": "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WhenExpression"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WhenExpression"
           }
         }
       }
     },
-    "v1beta1.PipelineSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineSpec": {
       "description": "PipelineSpec defines the desired state of Pipeline.",
       "type": "object",
       "properties": {
@@ -1187,7 +1022,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTask"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTask"
           }
         },
         "params": {
@@ -1195,7 +1030,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.ParamSpec"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ParamSpec"
           }
         },
         "resources": {
@@ -1203,7 +1038,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineDeclaredResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineDeclaredResource"
           }
         },
         "results": {
@@ -1211,7 +1046,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResult"
           }
         },
         "tasks": {
@@ -1219,7 +1054,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTask"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTask"
           }
         },
         "workspaces": {
@@ -1227,12 +1062,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineWorkspaceDeclaration"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineWorkspaceDeclaration"
           }
         }
       }
     },
-    "v1beta1.PipelineTask": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTask": {
       "description": "PipelineTask defines a task in a Pipeline, passing inputs from both Params and from the output of previous tasks.",
       "type": "object",
       "properties": {
@@ -1241,7 +1076,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTaskCondition"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskCondition"
           }
         },
         "name": {
@@ -1253,12 +1088,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param"
           }
         },
         "resources": {
           "description": "Resources declares the resources given to this task as inputs and outputs.",
-          "$ref": "#/definitions/v1beta1.PipelineTaskResources"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskResources"
         },
         "retries": {
           "description": "Retries represents how many times this task should be retried in case of task failure: ConditionSucceeded set to False",
@@ -1275,11 +1110,11 @@
         },
         "taskRef": {
           "description": "TaskRef is a reference to a task definition.",
-          "$ref": "#/definitions/v1beta1.TaskRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRef"
         },
         "taskSpec": {
           "description": "TaskSpec is a specification of a task",
-          "$ref": "#/definitions/v1beta1.EmbeddedTask"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.EmbeddedTask"
         },
         "timeout": {
           "description": "Time after which the TaskRun times out. Defaults to 1 hour. Specified TaskRun timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
@@ -1290,7 +1125,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WhenExpression"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WhenExpression"
           }
         },
         "workspaces": {
@@ -1298,12 +1133,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspacePipelineTaskBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspacePipelineTaskBinding"
           }
         }
       }
     },
-    "v1beta1.PipelineTaskCondition": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskCondition": {
       "description": "PipelineTaskCondition allows a PipelineTask to declare a Condition to be evaluated before the Task is run.",
       "type": "object",
       "required": [
@@ -1320,7 +1155,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param"
           }
         },
         "resources": {
@@ -1328,12 +1163,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTaskInputResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskInputResource"
           }
         }
       }
     },
-    "v1beta1.PipelineTaskInputResource": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskInputResource": {
       "description": "PipelineTaskInputResource maps the name of a declared PipelineResource input dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used. This input may come from a previous task.",
       "type": "object",
       "required": [
@@ -1361,7 +1196,7 @@
         }
       }
     },
-    "v1beta1.PipelineTaskMetadata": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskMetadata": {
       "type": "object",
       "properties": {
         "annotations": {
@@ -1380,7 +1215,7 @@
         }
       }
     },
-    "v1beta1.PipelineTaskOutputResource": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskOutputResource": {
       "description": "PipelineTaskOutputResource maps the name of a declared PipelineResource output dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used.",
       "type": "object",
       "required": [
@@ -1400,7 +1235,7 @@
         }
       }
     },
-    "v1beta1.PipelineTaskParam": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskParam": {
       "description": "PipelineTaskParam is used to provide arbitrary string parameters to a Task.",
       "type": "object",
       "required": [
@@ -1418,7 +1253,7 @@
         }
       }
     },
-    "v1beta1.PipelineTaskResources": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskResources": {
       "description": "PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.",
       "type": "object",
       "properties": {
@@ -1427,7 +1262,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTaskInputResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskInputResource"
           }
         },
         "outputs": {
@@ -1435,12 +1270,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineTaskOutputResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskOutputResource"
           }
         }
       }
     },
-    "v1beta1.PipelineTaskRun": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskRun": {
       "description": "PipelineTaskRun reports the results of running a step in the Task. Each task has the potential to succeed or fail (based on the exit code) and produces logs.",
       "type": "object",
       "properties": {
@@ -1449,7 +1284,7 @@
         }
       }
     },
-    "v1beta1.PipelineTaskRunSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineTaskRunSpec": {
       "description": "PipelineTaskRunSpec  can be used to configure specific specs for a concrete Task",
       "type": "object",
       "properties": {
@@ -1464,7 +1299,7 @@
         }
       }
     },
-    "v1beta1.PipelineWorkspaceDeclaration": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineWorkspaceDeclaration": {
       "description": "WorkspacePipelineDeclaration creates a named slot in a Pipeline that a PipelineRun is expected to populate with a workspace binding. Deprecated: use PipelineWorkspaceDeclaration type instead",
       "type": "object",
       "required": [
@@ -1486,7 +1321,7 @@
         }
       }
     },
-    "v1beta1.ResultRef": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ResultRef": {
       "description": "ResultRef is a type that represents a reference to a task run result",
       "type": "object",
       "required": [
@@ -1504,7 +1339,7 @@
         }
       }
     },
-    "v1beta1.Sidecar": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Sidecar": {
       "description": "Sidecar has nearly the same data structure as Step, consisting of a Container and an optional Script, but does not have the ability to timeout.",
       "type": "object",
       "required": [
@@ -1651,12 +1486,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceUsage"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceUsage"
           }
         }
       }
     },
-    "v1beta1.SidecarState": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SidecarState": {
       "description": "SidecarState reports the results of running a sidecar in a Task.",
       "type": "object",
       "properties": {
@@ -1683,7 +1518,7 @@
         }
       }
     },
-    "v1beta1.SkippedTask": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SkippedTask": {
       "description": "SkippedTask is used to describe the Tasks that were skipped due to their When Expressions evaluating to False. This is a struct because we are looking into including more details about the When Expressions that caused this Task to be skipped.",
       "type": "object",
       "required": [
@@ -1700,12 +1535,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WhenExpression"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WhenExpression"
           }
         }
       }
     },
-    "v1beta1.Step": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Step": {
       "description": "Step embeds the Container type, which allows it to include fields not provided by Container.",
       "type": "object",
       "required": [
@@ -1860,12 +1695,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceUsage"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceUsage"
           }
         }
       }
     },
-    "v1beta1.StepState": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.StepState": {
       "description": "StepState reports the results of running a step in a Task.",
       "type": "object",
       "properties": {
@@ -1892,7 +1727,7 @@
         }
       }
     },
-    "v1beta1.Task": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Task": {
       "description": "Task represents a collection of sequential steps that are run as part of a Pipeline using a set of inputs and producing a set of outputs. Tasks execute when TaskRuns are created that provide the input parameters and resources and output resources the Task requires.",
       "type": "object",
       "properties": {
@@ -1911,11 +1746,11 @@
         "spec": {
           "description": "Spec holds the desired state of the Task from the client",
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec"
         }
       }
     },
-    "v1beta1.TaskList": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskList": {
       "description": "TaskList contains a list of Task",
       "type": "object",
       "required": [
@@ -1930,7 +1765,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Task"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Task"
           }
         },
         "kind": {
@@ -1943,7 +1778,7 @@
         }
       }
     },
-    "v1beta1.TaskRef": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRef": {
       "description": "TaskRef can be used to refer to a specific instance of a task. Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64",
       "type": "object",
       "properties": {
@@ -1965,7 +1800,7 @@
         }
       }
     },
-    "v1beta1.TaskResource": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResource": {
       "description": "TaskResource defines an input or output Resource declared as a requirement by a Task. The Name field will be used to refer to these Resources within the Task definition, and when provided as an Input, the Name will be the path to the volume mounted containing this Resource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).",
       "type": "object",
       "required": [
@@ -1997,7 +1832,7 @@
         }
       }
     },
-    "v1beta1.TaskResourceBinding": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResourceBinding": {
       "description": "TaskResourceBinding points to the PipelineResource that will be used for the Task input or output called Name.",
       "type": "object",
       "properties": {
@@ -2015,7 +1850,7 @@
         },
         "resourceRef": {
           "description": "ResourceRef is a reference to the instance of the actual PipelineResource that should be used",
-          "$ref": "#/definitions/v1beta1.PipelineResourceRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceRef"
         },
         "resourceSpec": {
           "description": "ResourceSpec is specification of a resource that should be created and consumed by the task",
@@ -2023,7 +1858,7 @@
         }
       }
     },
-    "v1beta1.TaskResources": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResources": {
       "description": "TaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.",
       "type": "object",
       "properties": {
@@ -2032,7 +1867,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResource"
           }
         },
         "outputs": {
@@ -2040,12 +1875,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResource"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResource"
           }
         }
       }
     },
-    "v1beta1.TaskResult": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResult": {
       "description": "TaskResult used to describe the results of a task",
       "type": "object",
       "required": [
@@ -2064,7 +1899,7 @@
         }
       }
     },
-    "v1beta1.TaskRun": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRun": {
       "description": "TaskRun represents a single execution of a Task. TaskRuns are how the steps specified in a Task are executed; they specify the parameters and resources used to run the steps in a Task.",
       "type": "object",
       "properties": {
@@ -2082,15 +1917,15 @@
         },
         "spec": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskRunSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunSpec"
         },
         "status": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.TaskRunStatus"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus"
         }
       }
     },
-    "v1beta1.TaskRunDebug": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunDebug": {
       "description": "TaskRunDebug defines the breakpoint config for a particular TaskRun",
       "type": "object",
       "properties": {
@@ -2103,7 +1938,7 @@
         }
       }
     },
-    "v1beta1.TaskRunInputs": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunInputs": {
       "description": "TaskRunInputs holds the input values that this task was invoked with.",
       "type": "object",
       "properties": {
@@ -2111,19 +1946,19 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param"
           }
         },
         "resources": {
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResourceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResourceBinding"
           }
         }
       }
     },
-    "v1beta1.TaskRunList": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunList": {
       "description": "TaskRunList contains a list of TaskRun",
       "type": "object",
       "required": [
@@ -2138,7 +1973,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskRun"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRun"
           }
         },
         "kind": {
@@ -2151,7 +1986,7 @@
         }
       }
     },
-    "v1beta1.TaskRunOutputs": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunOutputs": {
       "description": "TaskRunOutputs holds the output values that this task was invoked with.",
       "type": "object",
       "properties": {
@@ -2159,12 +1994,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResourceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResourceBinding"
           }
         }
       }
     },
-    "v1beta1.TaskRunResources": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunResources": {
       "description": "TaskRunResources allows a TaskRun to declare inputs and outputs TaskResourceBinding",
       "type": "object",
       "properties": {
@@ -2173,7 +2008,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResourceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResourceBinding"
           }
         },
         "outputs": {
@@ -2181,12 +2016,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResourceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResourceBinding"
           }
         }
       }
     },
-    "v1beta1.TaskRunResult": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunResult": {
       "description": "TaskRunResult used to describe the results of a task",
       "type": "object",
       "required": [
@@ -2206,18 +2041,18 @@
         }
       }
     },
-    "v1beta1.TaskRunSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunSpec": {
       "description": "TaskRunSpec defines the desired state of TaskRun",
       "type": "object",
       "properties": {
         "debug": {
-          "$ref": "#/definitions/v1beta1.TaskRunDebug"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunDebug"
         },
         "params": {
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Param"
           }
         },
         "podTemplate": {
@@ -2225,7 +2060,7 @@
           "$ref": "#/definitions/pod.Template"
         },
         "resources": {
-          "$ref": "#/definitions/v1beta1.TaskRunResources"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunResources"
         },
         "serviceAccountName": {
           "type": "string",
@@ -2237,10 +2072,10 @@
         },
         "taskRef": {
           "description": "no more than one of the TaskRef and TaskSpec may be specified.",
-          "$ref": "#/definitions/v1beta1.TaskRef"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRef"
         },
         "taskSpec": {
-          "$ref": "#/definitions/v1beta1.TaskSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec"
         },
         "timeout": {
           "description": "Time after which the build times out. Defaults to 1 hour. Specified build timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
@@ -2251,12 +2086,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceBinding"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceBinding"
           }
         }
       }
     },
-    "v1beta1.TaskRunStatus": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus": {
       "description": "TaskRunStatus defines the observed state of TaskRun",
       "type": "object",
       "required": [
@@ -2276,7 +2111,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.CloudEventDelivery"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CloudEventDelivery"
           }
         },
         "completionTime": {
@@ -2308,7 +2143,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResourceResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceResult"
           }
         },
         "retriesStatus": {
@@ -2316,7 +2151,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus"
           }
         },
         "sidecars": {
@@ -2324,7 +2159,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.SidecarState"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SidecarState"
           }
         },
         "startTime": {
@@ -2336,7 +2171,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.StepState"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.StepState"
           }
         },
         "taskResults": {
@@ -2344,16 +2179,16 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskRunResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunResult"
           }
         },
         "taskSpec": {
           "description": "TaskSpec contains the Spec from the dereferenced Task definition used to instantiate this TaskRun.",
-          "$ref": "#/definitions/v1beta1.TaskSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec"
         }
       }
     },
-    "v1beta1.TaskRunStatusFields": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatusFields": {
       "description": "TaskRunStatusFields holds the fields of TaskRun's status.  This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
       "type": "object",
       "required": [
@@ -2365,7 +2200,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.CloudEventDelivery"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.CloudEventDelivery"
           }
         },
         "completionTime": {
@@ -2382,7 +2217,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResourceResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.PipelineResourceResult"
           }
         },
         "retriesStatus": {
@@ -2390,7 +2225,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskRunStatus"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunStatus"
           }
         },
         "sidecars": {
@@ -2398,7 +2233,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.SidecarState"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.SidecarState"
           }
         },
         "startTime": {
@@ -2410,7 +2245,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.StepState"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.StepState"
           }
         },
         "taskResults": {
@@ -2418,16 +2253,16 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskRunResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskRunResult"
           }
         },
         "taskSpec": {
           "description": "TaskSpec contains the Spec from the dereferenced Task definition used to instantiate this TaskRun.",
-          "$ref": "#/definitions/v1beta1.TaskSpec"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec"
         }
       }
     },
-    "v1beta1.TaskSpec": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskSpec": {
       "description": "TaskSpec defines the desired state of Task.",
       "type": "object",
       "properties": {
@@ -2440,19 +2275,19 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.ParamSpec"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.ParamSpec"
           }
         },
         "resources": {
           "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.",
-          "$ref": "#/definitions/v1beta1.TaskResources"
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResources"
         },
         "results": {
           "description": "Results are values that this Task can output",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.TaskResult"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TaskResult"
           }
         },
         "sidecars": {
@@ -2460,7 +2295,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Sidecar"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Sidecar"
           }
         },
         "stepTemplate": {
@@ -2472,7 +2307,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Step"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.Step"
           }
         },
         "volumes": {
@@ -2488,12 +2323,12 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.WorkspaceDeclaration"
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceDeclaration"
           }
         }
       }
     },
-    "v1beta1.TimeoutFields": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.TimeoutFields": {
       "type": "object",
       "properties": {
         "finally": {
@@ -2510,7 +2345,7 @@
         }
       }
     },
-    "v1beta1.WhenExpression": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WhenExpression": {
       "description": "WhenExpression allows a PipelineTask to declare expressions to be evaluated before the Task is run to determine whether the Task should be executed or skipped",
       "type": "object",
       "required": [
@@ -2539,7 +2374,7 @@
         }
       }
     },
-    "v1beta1.WorkspaceBinding": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceBinding": {
       "description": "WorkspaceBinding maps a Task's declared workspace to a Volume.",
       "type": "object",
       "required": [
@@ -2577,7 +2412,7 @@
         }
       }
     },
-    "v1beta1.WorkspaceDeclaration": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceDeclaration": {
       "description": "WorkspaceDeclaration is a declaration of a volume that a Task requires.",
       "type": "object",
       "required": [
@@ -2607,7 +2442,7 @@
         }
       }
     },
-    "v1beta1.WorkspacePipelineTaskBinding": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspacePipelineTaskBinding": {
       "description": "WorkspacePipelineTaskBinding describes how a workspace passed into the pipeline should be mapped to a task's declared workspace.",
       "type": "object",
       "required": [
@@ -2631,7 +2466,7 @@
         }
       }
     },
-    "v1beta1.WorkspaceUsage": {
+    "tektoncd.pipeline.pkg.apis.pipeline.v1beta1.WorkspaceUsage": {
       "description": "WorkspaceUsage is used by a Step or Sidecar to declare that it wants isolated access to a Workspace defined in a Task.",
       "type": "object",
       "required": [
@@ -2646,6 +2481,171 @@
         },
         "name": {
           "description": "Name is the name of the workspace this Step or Sidecar wants access to.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResource": {
+      "description": "PipelineResource describes a resource that is an input to or output from a Task.",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "Spec holds the desired state of the PipelineResource from the client",
+          "default": {},
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResourceSpec"
+        },
+        "status": {
+          "description": "Status is deprecated. It usually is used to communicate the observed state of the PipelineResource from the controller, but was unused as there is no controller for PipelineResource.",
+          "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResourceStatus"
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResourceList": {
+      "description": "PipelineResourceList contains a list of PipelineResources",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResource"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResourceSpec": {
+      "description": "PipelineResourceSpec defines  an individual resources used in the pipeline.",
+      "type": "object",
+      "required": [
+        "type",
+        "params"
+      ],
+      "properties": {
+        "description": {
+          "description": "Description is a user-facing description of the resource that may be used to populate a UI.",
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.resource.v1alpha1.ResourceParam"
+          }
+        },
+        "secrets": {
+          "description": "Secrets to fetch to populate some of resource fields",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/tektoncd.pipeline.pkg.apis.resource.v1alpha1.SecretParam"
+          }
+        },
+        "type": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.PipelineResourceStatus": {
+      "description": "PipelineResourceStatus does not contain anything because PipelineResources on their own do not have a status Deprecated",
+      "type": "object"
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.ResourceDeclaration": {
+      "description": "ResourceDeclaration defines an input or output PipelineResource declared as a requirement by another type such as a Task or Condition. The Name field will be used to refer to these PipelineResources within the type's definition, and when provided as an Input, the Name will be the path to the volume mounted containing this PipelineResource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).",
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "description": {
+          "description": "Description is a user-facing description of the declared resource that may be used to populate a UI.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name declares the name by which a resource is referenced in the definition. Resources may be referenced by name in the definition of a Task's steps.",
+          "type": "string",
+          "default": ""
+        },
+        "optional": {
+          "description": "Optional declares the resource as optional. By default optional is set to false which makes a resource required. optional: true - the resource is considered optional optional: false - the resource is considered required (equivalent of not specifying it)",
+          "type": "boolean"
+        },
+        "targetPath": {
+          "description": "TargetPath is the path in workspace directory where the resource will be copied.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Type is the type of this resource;",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.ResourceParam": {
+      "description": "ResourceParam declares a string value to use for the parameter called Name, and is used in the specific context of PipelineResources.",
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "tektoncd.pipeline.pkg.apis.resource.v1alpha1.SecretParam": {
+      "description": "SecretParam indicates which secret can be used to populate a field of the resource",
+      "type": "object",
+      "required": [
+        "fieldName",
+        "secretKey",
+        "secretName"
+      ],
+      "properties": {
+        "fieldName": {
+          "type": "string",
+          "default": ""
+        },
+        "secretKey": {
+          "type": "string",
+          "default": ""
+        },
+        "secretName": {
           "type": "string",
           "default": ""
         }
