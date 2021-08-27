@@ -58,9 +58,11 @@ function run_go_e2e_tests() {
 }
 
 function run_yaml_e2e_tests() {
-  run_yaml_e2e_tests_alpha || return 1
+  go_test_e2e -tags=examples -timeout=20m ./test/ || return 1
 
-  run_yaml_e2e_tests_beta || return 1
+  #run_yaml_e2e_tests_alpha || return 1
+
+  #run_yaml_e2e_tests_beta || return 1
 }
 
 function run_yaml_e2e_tests_alpha() {
