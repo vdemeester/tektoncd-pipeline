@@ -21,7 +21,7 @@ package test
 import (
 	"bytes"
 	"context"
-	"errors"
+	//	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -70,11 +70,12 @@ func waitValidateTaskRunDone(ctx context.Context, t *testing.T, c *clients, task
 func substituteEnv(input []byte, namespace string) ([]byte, error) {
 	// Replace the placeholder image repo with the value of the
 	// KO_DOCKER_REPO env var.
-	val, ok := os.LookupEnv("KO_DOCKER_REPO")
-	if !ok {
-		return nil, errors.New("KO_DOCKER_REPO is not set")
-	}
-	output := defaultKoDockerRepoRE.ReplaceAll(input, []byte(val))
+	// val, ok := os.LookupEnv("KO_DOCKER_REPO")
+	// if !ok {
+	// 	return nil, errors.New("KO_DOCKER_REPO is not set")
+	// }
+	//output := defaultKoDockerRepoRE.ReplaceAll(input, []byte(val))
+	output := input
 
 	// Strip any "namespace: default"s, all resources will be created in
 	// the test namespace using `ko create -n`
@@ -136,7 +137,7 @@ func exampleTest(path string, waitValidateFunc waitFunc, createFunc createFunc, 
 
 		subbedInput, err := substituteEnv(inputExample, namespace)
 		if err != nil {
-			t.Skipf("Couldn't substitute environment: %v", err)
+			t.Fatalf("Couldn't substitute environment: %v", err)
 		}
 
 		out, err := createFunc(subbedInput, namespace)
