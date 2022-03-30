@@ -22,12 +22,19 @@ source $(git rev-parse --show-toplevel)/vendor/github.com/tektoncd/plumbing/scri
 
 cd ${REPO_ROOT_DIR}
 
-VERSION="release-0.23"
-
 # The list of dependencies that we track at HEAD and periodically
 # float forward in this repository.
 FLOATING_DEPS=(
-  "knative.dev/pkg@${VERSION}"
+    "knative.dev/pkg"
+    # plumbing
+    "github.com/tektoncd/plumbing@main" # fetch main branch
+    # utilities
+    "github.com/ghodss/yaml"
+    "github.com/google/go-containerregistry"
+    "github.com/google/go-cmp"
+    "github.com/containerd/containerd"
+    "github.com/pkg/errors"
+    "go.uber.org/zap"
 )
 
 # Parse flags to determine any we should pass to dep.
