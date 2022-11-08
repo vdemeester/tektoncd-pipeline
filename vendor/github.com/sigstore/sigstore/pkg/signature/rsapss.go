@@ -19,23 +19,13 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
-	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/signature/options"
 )
 
-// checked on LoadSigner, LoadVerifier, and SignMessage
 var rsaSupportedHashFuncs = []crypto.Hash{
-	crypto.SHA256,
-	crypto.SHA384,
-	crypto.SHA512,
-}
-
-// checked on VerifySignature. Supports SHA1 verification.
-var rsaSupportedVerifyHashFuncs = []crypto.Hash{
-	crypto.SHA1,
 	crypto.SHA256,
 	crypto.SHA384,
 	crypto.SHA512,
@@ -181,7 +171,7 @@ func (r RSAPSSVerifier) PublicKey(_ ...PublicKeyOption) (crypto.PublicKey, error
 //
 // All other options are ignored if specified.
 func (r RSAPSSVerifier) VerifySignature(signature, message io.Reader, opts ...VerifyOption) error {
-	digest, hf, err := ComputeDigestForVerifying(message, r.hashFunc, rsaSupportedVerifyHashFuncs, opts...)
+	digest, hf, err := ComputeDigestForVerifying(message, r.hashFunc, rsaSupportedHashFuncs, opts...)
 	if err != nil {
 		return err
 	}
@@ -192,7 +182,7 @@ func (r RSAPSSVerifier) VerifySignature(signature, message io.Reader, opts ...Ve
 
 	sigBytes, err := io.ReadAll(signature)
 	if err != nil {
-		return fmt.Errorf("reading signature: %w", err)
+		return errors.Wrap(err, "reading signature")
 	}
 
 	// rsa.VerifyPSS ignores pssOpts.Hash, so we don't set it
@@ -217,11 +207,11 @@ type RSAPSSSignerVerifier struct {
 func LoadRSAPSSSignerVerifier(priv *rsa.PrivateKey, hf crypto.Hash, opts *rsa.PSSOptions) (*RSAPSSSignerVerifier, error) {
 	signer, err := LoadRSAPSSSigner(priv, hf, opts)
 	if err != nil {
-		return nil, fmt.Errorf("initializing signer: %w", err)
+		return nil, errors.Wrap(err, "initializing signer")
 	}
 	verifier, err := LoadRSAPSSVerifier(&priv.PublicKey, hf, opts)
 	if err != nil {
-		return nil, fmt.Errorf("initializing verifier: %w", err)
+		return nil, errors.Wrap(err, "initializing verifier")
 	}
 
 	return &RSAPSSSignerVerifier{

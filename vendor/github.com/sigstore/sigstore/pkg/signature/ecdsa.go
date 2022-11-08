@@ -20,23 +20,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"errors"
-	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/signature/options"
 )
 
-// checked on LoadSigner, LoadVerifier and SignMessage
 var ecdsaSupportedHashFuncs = []crypto.Hash{
-	crypto.SHA256,
-	crypto.SHA512,
-	crypto.SHA384,
-	crypto.SHA224,
-}
-
-// checked on VerifySignature. Supports SHA1 verification.
-var ecdsaSupportedVerifyHashFuncs = []crypto.Hash{
 	crypto.SHA256,
 	crypto.SHA512,
 	crypto.SHA384,
@@ -138,10 +128,6 @@ func LoadECDSAVerifier(pub *ecdsa.PublicKey, hashFunc crypto.Hash) (*ECDSAVerifi
 		return nil, errors.New("invalid ECDSA public key specified")
 	}
 
-	if !isSupportedAlg(hashFunc, ecdsaSupportedHashFuncs) {
-		return nil, errors.New("invalid hash function specified")
-	}
-
 	return &ECDSAVerifier{
 		publicKey: pub,
 		hashFunc:  hashFunc,
@@ -167,11 +153,7 @@ func (e ECDSAVerifier) PublicKey(_ ...PublicKeyOption) (crypto.PublicKey, error)
 //
 // All other options are ignored if specified.
 func (e ECDSAVerifier) VerifySignature(signature, message io.Reader, opts ...VerifyOption) error {
-	if e.publicKey == nil {
-		return errors.New("no public key set for ECDSAVerifier")
-	}
-
-	digest, _, err := ComputeDigestForVerifying(message, e.hashFunc, ecdsaSupportedVerifyHashFuncs, opts...)
+	digest, _, err := ComputeDigestForVerifying(message, e.hashFunc, ecdsaSupportedHashFuncs, opts...)
 	if err != nil {
 		return err
 	}
@@ -182,18 +164,12 @@ func (e ECDSAVerifier) VerifySignature(signature, message io.Reader, opts ...Ver
 
 	sigBytes, err := io.ReadAll(signature)
 	if err != nil {
-		return fmt.Errorf("reading signature: %w", err)
-	}
-
-	// Without this check, VerifyASN1 panics on an invalid key.
-	if !e.publicKey.Curve.IsOnCurve(e.publicKey.X, e.publicKey.Y) {
-		return fmt.Errorf("invalid ECDSA public key for %s", e.publicKey.Params().Name)
+		return errors.Wrap(err, "reading signature")
 	}
 
 	if !ecdsa.VerifyASN1(e.publicKey, digest, sigBytes) {
-		return errors.New("invalid signature when validating ASN.1 encoded signature")
+		return errors.New("failed to verify signature")
 	}
-
 	return nil
 }
 
@@ -208,11 +184,11 @@ type ECDSASignerVerifier struct {
 func LoadECDSASignerVerifier(priv *ecdsa.PrivateKey, hf crypto.Hash) (*ECDSASignerVerifier, error) {
 	signer, err := LoadECDSASigner(priv, hf)
 	if err != nil {
-		return nil, fmt.Errorf("initializing signer: %w", err)
+		return nil, errors.Wrap(err, "initializing signer")
 	}
 	verifier, err := LoadECDSAVerifier(&priv.PublicKey, hf)
 	if err != nil {
-		return nil, fmt.Errorf("initializing verifier: %w", err)
+		return nil, errors.Wrap(err, "initializing verifier")
 	}
 
 	return &ECDSASignerVerifier{

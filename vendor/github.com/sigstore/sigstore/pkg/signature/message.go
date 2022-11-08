@@ -18,9 +18,10 @@ package signature
 import (
 	"crypto"
 	crand "crypto/rand"
-	"errors"
 	"fmt"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 func isSupportedAlg(alg crypto.Hash, supportedAlgs []crypto.Hash) bool {
@@ -97,7 +98,7 @@ func hashMessage(rawMessage io.Reader, hashFunc crypto.Hash) ([]byte, error) {
 	hasher := hashFunc.New()
 	// avoids reading entire message into memory
 	if _, err := io.Copy(hasher, rawMessage); err != nil {
-		return nil, fmt.Errorf("hashing message: %w", err)
+		return nil, errors.Wrap(err, "hashing message")
 	}
 	return hasher.Sum(nil), nil
 }
