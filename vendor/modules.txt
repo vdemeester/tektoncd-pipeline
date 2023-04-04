@@ -208,7 +208,7 @@ github.com/blang/semver/v4
 # github.com/blendle/zapdriver v1.3.1
 ## explicit; go 1.12
 github.com/blendle/zapdriver
-# github.com/bluekeyes/go-gitdiff v0.7.0
+# github.com/bluekeyes/go-gitdiff v0.7.1
 ## explicit; go 1.13
 github.com/bluekeyes/go-gitdiff/gitdiff
 # github.com/cenkalti/backoff/v3 v3.2.2
@@ -552,7 +552,7 @@ github.com/jbenet/go-context/io
 # github.com/jellydator/ttlcache/v2 v2.11.1
 ## explicit; go 1.15
 github.com/jellydator/ttlcache/v2
-# github.com/jenkins-x/go-scm v1.13.9
+# github.com/jenkins-x/go-scm v1.13.13
 ## explicit; go 1.19
 github.com/jenkins-x/go-scm/pkg/hmac
 github.com/jenkins-x/go-scm/scm
@@ -681,8 +681,6 @@ github.com/prometheus/procfs/internal/util
 ## explicit; go 1.13
 github.com/prometheus/statsd_exporter/pkg/mapper
 github.com/prometheus/statsd_exporter/pkg/mapper/fsm
-# github.com/rogpeppe/go-internal v1.8.0
-## explicit; go 1.11
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
@@ -1181,7 +1179,7 @@ k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions/apiextensio
 k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions/internalinterfaces
 k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/v1beta1
-# k8s.io/apimachinery v0.25.8
+# k8s.io/apimachinery v0.26.3
 ## explicit; go 1.19
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/errors

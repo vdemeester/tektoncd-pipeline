@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4
-	github.com/jenkins-x/go-scm v1.13.9
+	github.com/jenkins-x/go-scm v1.13.13
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
@@ -29,7 +29,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.2.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	k8s.io/api v0.25.8
-	k8s.io/apimachinery v0.25.8
+	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.25.8
 	k8s.io/code-generator v0.25.8
 	k8s.io/klog v1.0.0
@@ -96,7 +96,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/theupdateframework/go-tuf v0.5.2 // indirect
@@ -134,7 +133,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
-	github.com/bluekeyes/go-gitdiff v0.7.0 // indirect
+	github.com/bluekeyes/go-gitdiff v0.7.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20221002210726-e883f69e0206 // indirect
