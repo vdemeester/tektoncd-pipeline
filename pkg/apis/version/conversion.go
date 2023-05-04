@@ -17,8 +17,12 @@ limitations under the License.
 package version
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,14 +30,23 @@ import (
 // SerializeToMetadata serializes the input field and adds it as an annotation to
 // the metadata under the input key.
 func SerializeToMetadata(meta *metav1.ObjectMeta, field interface{}, key string) error {
-	bytes, err := json.Marshal(field)
+	data, err := json.Marshal(field)
 	if err != nil {
 		return fmt.Errorf("error serializing field: %w", err)
 	}
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write(data); err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+	compressedAndEncoded := base64.StdEncoding.EncodeToString(b.Bytes())
 	if meta.Annotations == nil {
 		meta.Annotations = make(map[string]string)
 	}
-	meta.Annotations[key] = string(bytes)
+	meta.Annotations[key] = string(compressedAndEncoded)
 	return nil
 }
 
@@ -45,7 +58,25 @@ func DeserializeFromMetadata(meta *metav1.ObjectMeta, to interface{}, key string
 		return nil
 	}
 	if str, ok := meta.Annotations[key]; ok {
-		if err := json.Unmarshal([]byte(str), to); err != nil {
+		decoded, err := base64.StdEncoding.DecodeString(str)
+		if err != nil {
+			return err
+		}
+		gz, err := gzip.NewReader(bytes.NewReader([]byte(decoded)))
+		if err != nil {
+			return err
+		}
+		data, err := ioutil.ReadAll(gz)
+		if err != nil {
+			return err
+		}
+		if err := gz.Close(); err != nil {
+			return err
+		}
+		if err != nil {
+			return fmt.Errorf("error decoding string from encoded marshalled bytes %w", err)
+		}
+		if err := json.Unmarshal(data, to); err != nil {
 			return fmt.Errorf("error deserializing key %s from metadata: %w", key, err)
 		}
 		delete(meta.Annotations, key)
