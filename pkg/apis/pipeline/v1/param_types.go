@@ -66,7 +66,13 @@ type ParamSpecs []ParamSpec
 
 // PropertySpec defines the struct for object keys
 type PropertySpec struct {
+	// Type is the user-specified type of the parameter. The possible types
+	// are currently "string", "array" and "object", and "string" is the default.
 	Type ParamType `json:"type,omitempty"`
+	// Enum declares a set of allowed param input values for tasks/pipelines that can be validated.
+	// If Enum is not set, no input validation is performed for the param.
+	// +optional
+	Enum []string `json:"enum,omitempty"`
 }
 
 // SetDefaults set the default type
@@ -149,22 +155,48 @@ func (ps ParamSpecs) ValidateNoDuplicateNames() *apis.FieldError {
 // validateParamEnum validates feature flag, duplication and allowed types for Param Enum
 func (ps ParamSpecs) validateParamEnums(ctx context.Context) *apis.FieldError {
 	var errs *apis.FieldError
+	enableParamEnum := config.FromContextOrDefaults(ctx).FeatureFlags.EnableParamEnum
 	for _, p := range ps {
 		if len(p.Enum) == 0 {
 			continue
 		}
-		if !config.FromContextOrDefaults(ctx).FeatureFlags.EnableParamEnum {
+		if !enableParamEnum {
 			errs = errs.Also(errs, apis.ErrGeneric(fmt.Sprintf("feature flag `%s` should be set to true to use Enum", config.EnableParamEnum), "").ViaKey(p.Name))
 		}
-		if p.Type != ParamTypeString {
-			errs = errs.Also(apis.ErrGeneric("enum can only be set with string type param", "").ViaKey(p.Name))
+		switch p.Type {
+		case ParamTypeString, ParamTypeObject:
+			errs = errs.Also(errs, p.validateEnum())
+		default:
+			errs = errs.Also(apis.ErrGeneric("enum can only be set with string type param or on properties", "").ViaKey(p.Name))
 		}
-		for dup := range findDups(p.Enum) {
-			errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("parameter enum value %v appears more than once", dup), "").ViaKey(p.Name))
+	}
+	return errs
+}
+
+func (p ParamSpec) validateEnum() *apis.FieldError {
+	var errs *apis.FieldError
+	for dup := range findDups(p.Enum) {
+		errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("parameter enum value %v appears more than once", dup), "").ViaKey(p.Name))
+	}
+	if p.Default != nil && p.Default.StringVal != "" {
+		if !slices.Contains(p.Enum, p.Default.StringVal) {
+			errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("param default value %v not in the enum list", p.Default.StringVal), "").ViaKey(p.Name))
 		}
-		if p.Default != nil && p.Default.StringVal != "" {
-			if !slices.Contains(p.Enum, p.Default.StringVal) {
-				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("param default value %v not in the enum list", p.Default.StringVal), "").ViaKey(p.Name))
+	}
+	// Validate properties
+	for pn, pp := range p.Properties {
+		if pp.Type != ParamTypeString {
+			errs = errs.Also(apis.ErrGeneric("enum can only be set with string type param on properties", "").ViaKey(p.Name).ViaKey(pn))
+		}
+		for dup := range findDups(pp.Enum) {
+			errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("parameter enum value %v appears more than once", dup), "").ViaKey(p.Name).ViaKey(pn))
+		}
+		if p.Default != nil && p.Default.ObjectVal != nil {
+			defaultValue, ok := p.Default.ObjectVal[pn]
+			if ok {
+				if !slices.Contains(pp.Enum, defaultValue) {
+					errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("param default value %v not in the enum list", p.Default.StringVal), "").ViaKey(p.Name).ViaKey(pn))
+				}
 			}
 		}
 	}
@@ -172,9 +204,9 @@ func (ps ParamSpecs) validateParamEnums(ctx context.Context) *apis.FieldError {
 }
 
 // findDups returns the duplicate element in the given slice
-func findDups(vals []string) sets.String {
-	seen := sets.String{}
-	dups := sets.String{}
+func findDups(vals []string) sets.Set[string] {
+	seen := sets.New[string]()
+	dups := sets.New[string]()
 	for _, val := range vals {
 		if seen.Has(val) {
 			dups.Insert(val)
@@ -214,8 +246,8 @@ func (p Param) GetVarSubstitutionExpressions() ([]string, bool) {
 }
 
 // ExtractNames returns a set of unique names
-func (ps Params) ExtractNames() sets.String {
-	names := sets.String{}
+func (ps Params) ExtractNames() sets.Set[string] {
+	names := sets.New[string]()
 	for _, p := range ps {
 		names.Insert(p.Name)
 	}

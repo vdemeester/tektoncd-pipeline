@@ -55,8 +55,8 @@ func validateParams(ctx context.Context, paramSpecs []v1.ParamSpec, params v1.Pa
 }
 
 // neededParamsNamesAndTypes returns the needed parameter names and types based on the paramSpec
-func neededParamsNamesAndTypes(paramSpecs []v1.ParamSpec) (sets.String, map[string]v1.ParamType) {
-	neededParamsNames := sets.String{}
+func neededParamsNamesAndTypes(paramSpecs []v1.ParamSpec) (sets.Set[string], map[string]v1.ParamType) {
+	neededParamsNames := sets.New[string]()
 	neededParamsTypes := make(map[string]v1.ParamType)
 	for _, inputResourceParam := range paramSpecs {
 		neededParamsNames.Insert(inputResourceParam.Name)
@@ -67,7 +67,7 @@ func neededParamsNamesAndTypes(paramSpecs []v1.ParamSpec) (sets.String, map[stri
 
 // missingParamsNames returns a slice of missing parameter names that have not been declared with a default value
 // in the paramSpec
-func missingParamsNames(neededParams sets.String, providedParams sets.String, paramSpecs []v1.ParamSpec) []string {
+func missingParamsNames(neededParams sets.Set[string], providedParams sets.Set[string], paramSpecs []v1.ParamSpec) []string {
 	missingParamsNames := neededParams.Difference(providedParams)
 	var missingParamsNamesWithNoDefaults []string
 	for _, inputResourceParam := range paramSpecs {
@@ -77,6 +77,7 @@ func missingParamsNames(neededParams sets.String, providedParams sets.String, pa
 	}
 	return missingParamsNamesWithNoDefaults
 }
+
 func wrongTypeParamsNames(params []v1.Param, matrix v1.Params, neededParamsTypes map[string]v1.ParamType) []string {
 	// TODO(#4723): validate that $(task.taskname.result.resultname) is invalid for array and object type.
 	// It should be used to refer string and need to add [*] to refer to array or object.
