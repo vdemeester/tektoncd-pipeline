@@ -71,7 +71,7 @@ spec:
   steps:
 
   - name: container-registry-auth
-    image: cgr.dev/chainguard/crane:latest-dev@sha256:8ebcdd154abd06371886fee6583c7c9bbc4e88a2999c493266b1580f605e0e7c
+    image: cgr.dev/chainguard/crane:latest-dev@sha256:9a8b188d84efcab778ab8bb7dc0cb622d644e7b57e48adc42287df1fee170806
     script: |
       #!/bin/sh
       set -ex
@@ -125,7 +125,7 @@ spec:
       cat /workspace/.ko.yaml
 
   - name: run-ko
-    image: gcr.io/tekton-releases/dogfooding/ko@sha256:8c4dbc57bcfd4c0a68f62c42da3f22932b0f3f54d4724c65841ad78406bc09ad
+    image: gcr.io/tekton-releases/dogfooding/ko@sha256:7cdf0033a9352aefecb7f58b8a448358ebbe8b2b335f84ee3ea1b2b673182c76
     env:
     - name: KO_DOCKER_REPO
       value: $(params.imageRegistry)/$(params.imageRegistryPath)
@@ -221,7 +221,7 @@ spec:
 
 
   - name: tag-images
-    image: cgr.dev/chainguard/crane:latest-dev@sha256:8ebcdd154abd06371886fee6583c7c9bbc4e88a2999c493266b1580f605e0e7c
+    image: cgr.dev/chainguard/crane:latest-dev@sha256:9a8b188d84efcab778ab8bb7dc0cb622d644e7b57e48adc42287df1fee170806
     script: |
       #!/bin/sh
       set -ex
