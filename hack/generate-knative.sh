@@ -54,6 +54,8 @@ PREFIX=${GOBIN:-${GOPATH}/bin}
 
 function codegen::join() { local IFS="$1"; shift; echo "$*"; }
 
+set -x
+
 # enumerate group versions
 FQ_APIS=() # e.g. k8s.io/api/apps/v1
 for GVs in ${GROUPS_WITH_VERSIONS}; do
@@ -96,3 +98,4 @@ if grep -qw "injection" <<<"${GENS}"; then
     --output-package ${OUTPUT_PKG} \
     "$@"
 fi
+
