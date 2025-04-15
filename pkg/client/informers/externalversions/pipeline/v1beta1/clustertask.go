@@ -19,13 +19,13 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	apispipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/tektoncd/pipeline/pkg/client/informers/externalversions/internalinterfaces"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/client/listers/pipeline/v1beta1"
+	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/client/listers/pipeline/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // ClusterTasks.
 type ClusterTaskInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1beta1.ClusterTaskLister
+	Lister() pipelinev1beta1.ClusterTaskLister
 }
 
 type clusterTaskInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredClusterTaskInformer(client versioned.Interface, resyncPeriod tim
 				return client.TektonV1beta1().ClusterTasks().Watch(context.TODO(), options)
 			},
 		},
-		&pipelinev1beta1.ClusterTask{},
+		&apispipelinev1beta1.ClusterTask{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *clusterTaskInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *clusterTaskInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pipelinev1beta1.ClusterTask{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispipelinev1beta1.ClusterTask{}, f.defaultInformer)
 }
 
-func (f *clusterTaskInformer) Lister() v1beta1.ClusterTaskLister {
-	return v1beta1.NewClusterTaskLister(f.Informer().GetIndexer())
+func (f *clusterTaskInformer) Lister() pipelinev1beta1.ClusterTaskLister {
+	return pipelinev1beta1.NewClusterTaskLister(f.Informer().GetIndexer())
 }
