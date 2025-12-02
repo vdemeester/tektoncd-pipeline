@@ -92,6 +92,16 @@ $(TEST_UNIT_TARGETS): test-unit
 test-unit: ## Run unit tests
 	$(GO) test -timeout $(TIMEOUT_UNIT) $(ARGS) ./...
 
+## Benchmarks
+BENCH_TARGETS := bench-verbose bench-benchmem bench-all
+bench-verbose:  BENCH_ARGS=-v
+bench-benchmem: BENCH_ARGS=-benchmem
+bench-all:      BENCH_ARGS=-v -benchmem
+$(BENCH_TARGETS): bench
+.PHONY: $(BENCH_TARGETS) bench
+bench: ## Run benchmarks
+	$(GO) test -timeout $(TIMEOUT_UNIT) -bench=. -run='^$$' $(BENCH_ARGS) ./...
+
 TEST_E2E_TARGETS := test-e2e-short test-e2e-verbose test-e2e-race
 test-e2e-short:   ARGS=-short
 test-e2e-verbose: ARGS=-v
