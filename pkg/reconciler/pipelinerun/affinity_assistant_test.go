@@ -47,6 +47,7 @@ import (
 	fakek8s "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	testing2 "k8s.io/client-go/testing"
+	"knative.dev/pkg/kmeta"
 	logtesting "knative.dev/pkg/logging/testing"
 	"knative.dev/pkg/system"
 	_ "knative.dev/pkg/system/testing" // Setup system.Namespace()
@@ -1070,7 +1071,8 @@ func TestCleanupAffinityAssistants_Success(t *testing.T) {
 
 		// mocks `kubernetes.io/pvc-protection` finalizer behavior by adding DeletionTimestamp when deleting pvcs with the finalizer
 		// see details in: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work
-		if tc.aaBehavior == aa.AffinityAssistantPerPipelineRun {
+		// This is needed for both AffinityAssistantPerWorkspace and AffinityAssistantPerPipelineRun modes
+		if tc.aaBehavior == aa.AffinityAssistantPerPipelineRun || tc.aaBehavior == aa.AffinityAssistantPerWorkspace {
 			for _, pvc := range pvcs {
 				pvc.DeletionTimestamp = &metav1.Time{
 					Time: metav1.Now().Time,
@@ -1098,23 +1100,107 @@ func TestCleanupAffinityAssistants_Success(t *testing.T) {
 
 		// validate pvcs
 		for _, expectedPVCName := range tc.pvcNames {
-			if tc.aaBehavior == aa.AffinityAssistantPerWorkspace {
-				//  the PVCs are NOT expected to be deleted at Affinity Assistant cleanup time in AffinityAssistantPerWorkspace mode
-				_, err = c.KubeClientSet.CoreV1().PersistentVolumeClaims(pr.Namespace).Get(ctx, expectedPVCName, metav1.GetOptions{})
-				if err != nil {
-					t.Errorf("unexpected err when getting PersistentVolumeClaims, err: %v", err)
-				}
-			} else {
-				pvc, err := c.KubeClientSet.CoreV1().PersistentVolumeClaims(pr.Namespace).Get(ctx, expectedPVCName, metav1.GetOptions{})
-				if err != nil {
-					t.Fatalf("unexpect err when getting PersistentVolumeClaims, err: %v", err)
-				}
-				// validate the finalizer is removed, which mocks the pvc is deleted properly
-				if len(pvc.Finalizers) > 0 {
-					t.Errorf("pvc %s kubernetes.io/pvc-protection finalizer is not removed properly", pvc.Name)
-				}
+			// PVCs should be deleted for both AffinityAssistantPerWorkspace and AffinityAssistantPerPipelineRun modes
+			// This fixes issue #7618
+			pvc, err := c.KubeClientSet.CoreV1().PersistentVolumeClaims(pr.Namespace).Get(ctx, expectedPVCName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("unexpected err when getting PersistentVolumeClaims, err: %v", err)
+			}
+			// validate the finalizer is removed, which mocks the pvc is deleted properly
+			if len(pvc.Finalizers) > 0 {
+				t.Errorf("pvc %s kubernetes.io/pvc-protection finalizer is not removed properly", pvc.Name)
 			}
 		}
+	}
+}
+
+// TestCleanupPVCsForWorkspaceMode tests that PVCs created from VolumeClaimTemplate
+// are properly deleted in AffinityAssistantPerWorkspace mode
+// This addresses issue #7618 where PVCs are not deleted when PipelineRun is deleted while running
+func TestCleanupPVCsForWorkspaceMode(t *testing.T) {
+	workspaceName := "test-workspace"
+	workspaces := []v1.WorkspaceBinding{
+		{
+			Name:                workspaceName,
+			VolumeClaimTemplate: &corev1.PersistentVolumeClaim{},
+		},
+	}
+	pr := &v1.PipelineRun{
+		TypeMeta: metav1.TypeMeta{Kind: "PipelineRun"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-pipelinerun-pvc-cleanup",
+			UID:  "test-uid",
+		},
+		Spec: v1.PipelineRunSpec{
+			Workspaces: workspaces,
+		},
+	}
+
+	// Generate expected PVC name using the actual function
+	pvcName := volumeclaim.GeneratePVCNameFromWorkspaceBinding(workspaces[0].VolumeClaimTemplate.Name, workspaces[0], *kmeta.NewControllerRef(pr))
+	affinityAssistantName := GetAffinityAssistantName(workspaceName, pr.Name)
+
+	// Create StatefulSet
+	ss := &appsv1.StatefulSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StatefulSet",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   affinityAssistantName,
+			Labels: getStatefulSetLabels(pr, affinityAssistantName),
+		},
+		Status: appsv1.StatefulSetStatus{
+			ReadyReplicas: 1,
+		},
+	}
+
+	// Create PVC with finalizer (simulating real Kubernetes behavior)
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       pvcName,
+			Finalizers: []string{"kubernetes.io/pvc-protection"},
+		},
+	}
+
+	data := Data{
+		StatefulSets: []*appsv1.StatefulSet{ss},
+		PVCs:         []*corev1.PersistentVolumeClaim{pvc},
+	}
+
+	_, c, _ := seedTestData(data)
+	ctx := cfgtesting.SetFeatureFlags(t.Context(), t, map[string]string{
+		"coschedule": "workspaces",
+	})
+
+	// Mock PVC deletion behavior - set DeletionTimestamp when delete is called
+	pvc.DeletionTimestamp = &metav1.Time{
+		Time: metav1.Now().Time,
+	}
+	c.KubeClientSet.CoreV1().(*fake.FakeCoreV1).PrependReactor("delete", "persistentvolumeclaims",
+		func(action testing2.Action) (handled bool, ret runtime.Object, err error) {
+			return true, pvc, nil
+		})
+
+	// Call cleanup
+	err := c.cleanupAffinityAssistantsAndPVCs(ctx, pr)
+	if err != nil {
+		t.Fatalf("unexpected error when cleaning up Affinity Assistant: %v", err)
+	}
+
+	// Validate StatefulSet is deleted
+	_, err = c.KubeClientSet.AppsV1().StatefulSets(pr.Namespace).Get(ctx, affinityAssistantName, metav1.GetOptions{})
+	if !apierrors.IsNotFound(err) {
+		t.Errorf("expected StatefulSet to be deleted, got: %v", err)
+	}
+
+	// Validate PVC finalizer is removed (this will FAIL until we implement the fix)
+	retrievedPVC, err := c.KubeClientSet.CoreV1().PersistentVolumeClaims(pr.Namespace).Get(ctx, pvcName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error when getting PVC: %v", err)
+	}
+	if len(retrievedPVC.Finalizers) > 0 {
+		t.Errorf("PVC %s kubernetes.io/pvc-protection finalizer should be removed but was not. This indicates PVC was not properly deleted.", pvcName)
 	}
 }
 
@@ -1128,8 +1214,10 @@ func TestCleanupAffinityAssistantsAndPVCs_Failure(t *testing.T) {
 	}
 
 	ctx := t.Context()
+	kubeClientSet := fakek8s.NewSimpleClientset()
 	c := Reconciler{
-		KubeClientSet: fakek8s.NewSimpleClientset(),
+		KubeClientSet: kubeClientSet,
+		pvcHandler:    volumeclaim.NewPVCHandler(kubeClientSet, zap.NewExample().Sugar()),
 	}
 
 	// introduce a reactor to mock delete statefulsets & persistentvolumeclaims errors

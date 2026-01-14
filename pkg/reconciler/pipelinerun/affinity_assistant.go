@@ -211,12 +211,20 @@ func (c *Reconciler) cleanupAffinityAssistantsAndPVCs(ctx context.Context, pr *v
 	var errs []error
 	switch aaBehavior {
 	case aa.AffinityAssistantPerWorkspace:
-		// TODO (#5776): support optional PVC deletion behavior for per-workspace mode
 		for _, w := range pr.Spec.Workspaces {
 			if w.PersistentVolumeClaim != nil || w.VolumeClaimTemplate != nil {
 				affinityAssistantName := GetAffinityAssistantName(w.Name, pr.Name)
 				if err := c.KubeClientSet.AppsV1().StatefulSets(pr.Namespace).Delete(ctx, affinityAssistantName, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
 					errs = append(errs, fmt.Errorf("failed to delete StatefulSet %s: %w", affinityAssistantName, err))
+				}
+
+				// Delete PVCs created from VolumeClaimTemplate
+				// This fixes issue #7618 where PVCs are not deleted when PipelineRun is deleted while running
+				if w.VolumeClaimTemplate != nil {
+					pvcName := volumeclaim.GeneratePVCNameFromWorkspaceBinding(w.VolumeClaimTemplate.Name, w, *kmeta.NewControllerRef(pr))
+					if err := c.pvcHandler.PurgeFinalizerAndDeletePVCForWorkspace(ctx, pvcName, pr.Namespace); err != nil {
+						errs = append(errs, err)
+					}
 				}
 			}
 		}
