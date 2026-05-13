@@ -1,0 +1,46 @@
+# Pipeline that passes artifacts between tasks
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: consume-artifact
+spec:
+  artifacts:
+    inputs:
+      - name: data
+  steps:
+    - name: read-input
+      image: busybox
+      script: |
+        #!/bin/sh
+        set -ex
+        echo "Received artifact at $(inputs.data.path)"
+        ls -la $(inputs.data.path)/
+        cat $(inputs.data.path)/data.json
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: artifact-passing
+spec:
+  tasks:
+    - name: produce
+      taskRef:
+        name: produce-artifact
+    - name: consume
+      runAfter: [produce]
+      taskRef:
+        name: consume-artifact
+      artifacts:
+        inputs:
+          - name: data
+            from: tasks.produce.outputs.results
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: test-artifact-passing
+  labels:
+    tekton.dev/test: tep-0164
+spec:
+  pipelineRef:
+    name: artifact-passing

@@ -1,0 +1,31 @@
+# Simple Task that produces an artifact output
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: produce-artifact
+spec:
+  artifacts:
+    outputs:
+      - name: results
+        mediaType: application/vnd.tekton.artifact.test.v1+json
+  steps:
+    - name: create-output
+      image: busybox
+      script: |
+        #!/bin/sh
+        set -ex
+        mkdir -p $(outputs.results.path)
+        echo '{"test": "hello from TEP-0164", "timestamp": "'$(date -Iseconds)'"}' > $(outputs.results.path)/data.json
+        echo "Artifact content written to $(outputs.results.path)/data.json"
+        cat $(outputs.results.path)/data.json
+---
+# TaskRun to test it
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: test-artifact-output
+  labels:
+    tekton.dev/test: tep-0164
+spec:
+  taskRef:
+    name: produce-artifact
