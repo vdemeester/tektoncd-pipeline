@@ -217,6 +217,15 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1.TaskRun, taskSpec v1.Ta
 		}
 	}
 
+	// Inject artifact transport args when artifacts are enabled and configured
+	if featureFlags.EnableArtifacts {
+		artifactStorageCfg := config.FromContextOrDefaults(ctx).ArtifactStorage
+		if artifactStorageCfg != nil && artifactStorageCfg.OCIRepository != "" {
+			artifactArgs := artifactEntrypointArgs(&taskSpec, artifactStorageCfg.OCIRepository, artifactStorageCfg.Insecure)
+			commonExtraEntrypointArgs = append(commonExtraEntrypointArgs, artifactArgs...)
+		}
+	}
+
 	if featureFlags.EnableTerminationMessageCompression && !sidecarLogsResultsEnabled {
 		commonExtraEntrypointArgs = append(commonExtraEntrypointArgs, "-compress_termination_message=true")
 	}

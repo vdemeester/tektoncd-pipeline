@@ -37,6 +37,7 @@ type Config struct {
 	Events                 *Events
 	Tracing                *Tracing
 	WaitExponentialBackoff *WaitExponentialBackoff
+	ArtifactStorage        *ArtifactStorage
 }
 
 // FromContext extracts a Config from the provided context.
@@ -63,6 +64,7 @@ func FromContextOrDefaults(ctx context.Context) *Config {
 		Events:                 DefaultEvents.DeepCopy(),
 		Tracing:                DefaultTracing.DeepCopy(),
 		WaitExponentialBackoff: DefaultWaitExponentialBackoff.DeepCopy(),
+		ArtifactStorage:        &ArtifactStorage{},
 	}
 }
 
