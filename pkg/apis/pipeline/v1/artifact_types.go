@@ -23,6 +23,28 @@ import (
 // Algorithm Standard cryptographic hash algorithm
 type Algorithm string
 
+// ArtifactDeclarations declares what artifacts a task consumes and produces.
+type ArtifactDeclarations struct {
+	// Inputs declares artifacts that the task expects to consume.
+	// +listType=atomic
+	Inputs []ArtifactDeclaration `json:"inputs,omitempty"`
+	// Outputs declares artifacts that the task produces.
+	// +listType=atomic
+	Outputs []ArtifactDeclaration `json:"outputs,omitempty"`
+}
+
+// ArtifactDeclaration describes a single artifact input or output.
+type ArtifactDeclaration struct {
+	// Name of the artifact (used in path substitution and pipeline bindings)
+	Name string `json:"name"`
+	// MediaType hint for the artifact (e.g., application/vnd.tekton.artifact.junit.v1+xml)
+	// +optional
+	MediaType string `json:"mediaType,omitempty"`
+	// BuildOutput marks this artifact as the primary build output for referrer attachment
+	// +optional
+	BuildOutput bool `json:"buildOutput,omitempty"`
+}
+
 // Artifact represents an artifact within a system, potentially containing multiple values
 // associated with it.
 type Artifact struct {
