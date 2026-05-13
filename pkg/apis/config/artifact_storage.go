@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -62,4 +63,12 @@ func NewArtifactStorageFromMap(cfgMap map[string]string) (*ArtifactStorage, erro
 // NewArtifactStorageFromConfigMap creates an ArtifactStorage from a ConfigMap.
 func NewArtifactStorageFromConfigMap(config *corev1.ConfigMap) (*ArtifactStorage, error) {
 	return NewArtifactStorageFromMap(config.Data)
+}
+
+// GetArtifactStorageConfigName returns the name of the ConfigMap for artifact storage.
+func GetArtifactStorageConfigName() string {
+	if e := os.Getenv("CONFIG_ARTIFACT_STORAGE_NAME"); e != "" {
+		return e
+	}
+	return ArtifactStorageConfigName
 }

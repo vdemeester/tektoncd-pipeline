@@ -94,6 +94,7 @@ func NewStore(logger configmap.Logger, onAfterStore ...func(name string, value i
 				GetEventsConfigName():                 NewEventsFromConfigMap,
 				GetTracingConfigName():                NewTracingFromConfigMap,
 				GetWaitExponentialBackoffConfigName(): NewWaitExponentialBackoffFromConfigMap,
+			GetArtifactStorageConfigName():        NewArtifactStorageFromConfigMap,
 			},
 			onAfterStore...,
 		),
@@ -138,6 +139,10 @@ func (s *Store) Load() *Config {
 	if waitExponentialBackoff == nil {
 		waitExponentialBackoff = DefaultWaitExponentialBackoff.DeepCopy()
 	}
+	artifactStorage := s.UntypedLoad(GetArtifactStorageConfigName())
+	if artifactStorage == nil {
+		artifactStorage = &ArtifactStorage{}
+	}
 
 	return &Config{
 		Defaults:               defaults.(*Defaults).DeepCopy(),
@@ -147,5 +152,6 @@ func (s *Store) Load() *Config {
 		SpireConfig:            spireconfig.(*sc.SpireConfig).DeepCopy(),
 		Events:                 events.(*Events).DeepCopy(),
 		WaitExponentialBackoff: waitExponentialBackoff.(*WaitExponentialBackoff).DeepCopy(),
+		ArtifactStorage:        artifactStorage.(*ArtifactStorage),
 	}
 }
