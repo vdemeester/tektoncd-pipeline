@@ -41,18 +41,18 @@ import (
 
 // ArtifactInput describes an artifact to download before step execution.
 type ArtifactInput struct {
-	Name string // artifact name
-	URI  string // OCI URI (e.g., "registry:5000/artifacts/test@sha256:...")
-	Path string // local path to extract to
+	Name string `json:"name"`       // artifact name
+	URI  string `json:"uri"`        // OCI URI (e.g., "registry:5000/artifacts/test@sha256:...")
+	Path string `json:"path"`       // local path to extract to
 }
 
 // ArtifactOutput describes an artifact to upload after step execution.
 type ArtifactOutput struct {
-	Name        string // artifact name
-	Path        string // local path to archive from
-	Repository  string // OCI repository to push to
-	MediaType   string // artifact media type
-	BuildOutput bool   // whether this is a primary build output
+	Name        string `json:"name"`                  // artifact name
+	Path        string `json:"path"`                  // local path to archive from
+	Repository  string `json:"repository"`            // OCI repository to push to
+	MediaType   string `json:"mediaType"`             // artifact media type
+	BuildOutput bool   `json:"buildOutput,omitempty"` // whether this is a primary build output
 }
 
 // UploadArtifact archives the contents at output.Path and pushes them as an OCI
