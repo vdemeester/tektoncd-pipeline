@@ -5,7 +5,7 @@ metadata:
   name: config-artifact-storage
   namespace: tekton-pipelines
 data:
-  oci-repository: "registry.local:5555/tekton-artifacts"
+  oci-repository: "tekton-registry:5000/tekton-artifacts"
   insecure: "true"
 ---
 # Ensure artifacts feature is enabled
