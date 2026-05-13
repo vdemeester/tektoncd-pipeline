@@ -231,6 +231,10 @@ type PipelineTask struct {
 	// +optional
 	Matrix *Matrix `json:"matrix,omitempty"`
 
+	// Artifacts configures artifact bindings for this task.
+	// +optional
+	Artifacts *PipelineTaskArtifacts `json:"artifacts,omitempty"`
+
 	// Workspaces maps workspaces from the pipeline spec to the workspaces
 	// declared in the Task.
 	// +optional

@@ -45,6 +45,21 @@ type ArtifactDeclaration struct {
 	BuildOutput bool `json:"buildOutput,omitempty"`
 }
 
+// PipelineTaskArtifacts configures artifact bindings for a PipelineTask.
+type PipelineTaskArtifacts struct {
+	// Inputs binds artifact inputs from other tasks' outputs.
+	// +listType=atomic
+	Inputs []PipelineTaskArtifactBinding `json:"inputs,omitempty"`
+}
+
+// PipelineTaskArtifactBinding binds an artifact input to an output from another task.
+type PipelineTaskArtifactBinding struct {
+	// Name matches the artifact input name in the referenced Task.
+	Name string `json:"name"`
+	// From references an output from another task: "tasks.<taskName>.outputs.<artifactName>"
+	From string `json:"from"`
+}
+
 // Artifact represents an artifact within a system, potentially containing multiple values
 // associated with it.
 type Artifact struct {
