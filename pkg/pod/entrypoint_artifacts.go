@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"github.com/tektoncd/pipeline/pkg/entrypoint"
 )
 
 // artifactEntrypointArgs generates entrypoint CLI args for artifact transport
@@ -35,9 +34,14 @@ func artifactEntrypointArgs(taskSpec *v1.TaskSpec, ociRepository string, insecur
 	var args []string
 
 	if len(taskSpec.Artifacts.Inputs) > 0 {
-		var inputs []entrypoint.ArtifactInput
+		type artifactInput struct {
+			Name string `json:"name"`
+			URI  string `json:"uri"`
+			Path string `json:"path"`
+		}
+		var inputs []artifactInput
 		for _, decl := range taskSpec.Artifacts.Inputs {
-			inputs = append(inputs, entrypoint.ArtifactInput{
+			inputs = append(inputs, artifactInput{
 				Name: decl.Name,
 				// URI will be resolved at runtime from pipeline bindings or params
 				Path: filepath.Join("/workspace/artifacts/inputs", decl.Name),
@@ -48,9 +52,16 @@ func artifactEntrypointArgs(taskSpec *v1.TaskSpec, ociRepository string, insecur
 	}
 
 	if len(taskSpec.Artifacts.Outputs) > 0 {
-		var outputs []entrypoint.ArtifactOutput
+		type artifactOutput struct {
+			Name        string `json:"name"`
+			Path        string `json:"path"`
+			Repository  string `json:"repository"`
+			MediaType   string `json:"mediaType"`
+			BuildOutput bool   `json:"buildOutput,omitempty"`
+		}
+		var outputs []artifactOutput
 		for _, decl := range taskSpec.Artifacts.Outputs {
-			outputs = append(outputs, entrypoint.ArtifactOutput{
+			outputs = append(outputs, artifactOutput{
 				Name:        decl.Name,
 				Path:        filepath.Join("/workspace/artifacts/outputs", decl.Name),
 				Repository:  fmt.Sprintf("%s/%s", ociRepository, decl.Name),

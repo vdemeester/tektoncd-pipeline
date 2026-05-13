@@ -18,10 +18,10 @@ package pod
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"github.com/tektoncd/pipeline/pkg/entrypoint"
 )
 
 func TestArtifactEntrypointArgs(t *testing.T) {
@@ -38,7 +38,7 @@ func TestArtifactEntrypointArgs(t *testing.T) {
 
 	args := artifactEntrypointArgs(taskSpec, repository, insecure)
 
-	// Should contain -artifact_outputs flag
+	// Should contain -artifact_outputs flag with correct JSON
 	found := false
 	for i, arg := range args {
 		if arg == "-artifact_outputs" {
@@ -46,21 +46,23 @@ func TestArtifactEntrypointArgs(t *testing.T) {
 			if i+1 >= len(args) {
 				t.Fatal("-artifact_outputs flag has no value")
 			}
-			var outputs []entrypoint.ArtifactOutput
-			if err := json.Unmarshal([]byte(args[i+1]), &outputs); err != nil {
+			val := args[i+1]
+			// Verify it's valid JSON containing the expected values
+			var parsed []map[string]interface{}
+			if err := json.Unmarshal([]byte(val), &parsed); err != nil {
 				t.Fatalf("failed to parse artifact outputs JSON: %v", err)
 			}
-			if len(outputs) != 1 {
-				t.Fatalf("expected 1 output, got %d", len(outputs))
+			if len(parsed) != 1 {
+				t.Fatalf("expected 1 output, got %d", len(parsed))
 			}
-			if outputs[0].Name != "sbom" {
-				t.Errorf("expected name 'sbom', got %q", outputs[0].Name)
+			if parsed[0]["name"] != "sbom" {
+				t.Errorf("expected name 'sbom', got %v", parsed[0]["name"])
 			}
-			if outputs[0].MediaType != "application/vnd.cyclonedx+json" {
-				t.Errorf("expected mediaType 'application/vnd.cyclonedx+json', got %q", outputs[0].MediaType)
+			if parsed[0]["mediaType"] != "application/vnd.cyclonedx+json" {
+				t.Errorf("expected mediaType, got %v", parsed[0]["mediaType"])
 			}
-			if outputs[0].Repository != "registry:5000/artifacts/sbom" {
-				t.Errorf("expected repository 'registry:5000/artifacts/sbom', got %q", outputs[0].Repository)
+			if parsed[0]["repository"] != "registry:5000/artifacts/sbom" {
+				t.Errorf("expected repository, got %v", parsed[0]["repository"])
 			}
 		}
 	}
@@ -69,13 +71,7 @@ func TestArtifactEntrypointArgs(t *testing.T) {
 	}
 
 	// Should contain -artifact_insecure flag
-	foundInsecure := false
-	for _, arg := range args {
-		if arg == "-artifact_insecure" {
-			foundInsecure = true
-		}
-	}
-	if !foundInsecure {
+	if !contains(args, "-artifact_insecure") {
 		t.Error("expected -artifact_insecure flag in args")
 	}
 }
@@ -86,4 +82,13 @@ func TestArtifactEntrypointArgs_NoArtifacts(t *testing.T) {
 	if len(args) != 0 {
 		t.Errorf("expected empty args for task without artifacts, got %v", args)
 	}
+}
+
+func contains(ss []string, s string) bool {
+	for _, v := range ss {
+		if strings.Contains(v, s) {
+			return true
+		}
+	}
+	return false
 }

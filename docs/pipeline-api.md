@@ -1078,6 +1078,21 @@ the steps start and end after the steps complete.</p>
 <p>Results are values that this Task can output</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>artifacts</code><br/>
+<em>
+<a href="#tekton.dev/v1.ArtifactDeclarations">
+ArtifactDeclarations
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Artifacts declares the inputs and outputs of the task for OCI-based transport.
+Requires enable-artifacts feature flag.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1428,6 +1443,103 @@ bool
 </td>
 <td>
 <p>Indicate if the artifact is a build output or a by-product</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tekton.dev/v1.ArtifactDeclaration">ArtifactDeclaration
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.ArtifactDeclarations">ArtifactDeclarations</a>)
+</p>
+<div>
+<p>ArtifactDeclaration describes a single artifact input or output.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the artifact (used in path substitution and pipeline bindings)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mediaType</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MediaType hint for the artifact (e.g., application/vnd.tekton.artifact.junit.v1+xml)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>buildOutput</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>BuildOutput marks this artifact as the primary build output for referrer attachment</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tekton.dev/v1.ArtifactDeclarations">ArtifactDeclarations
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.TaskSpec">TaskSpec</a>)
+</p>
+<div>
+<p>ArtifactDeclarations declares what artifacts a task consumes and produces.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+<a href="#tekton.dev/v1.ArtifactDeclaration">
+[]ArtifactDeclaration
+</a>
+</em>
+</td>
+<td>
+<p>Inputs declares artifacts that the task expects to consume.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>outputs</code><br/>
+<em>
+<a href="#tekton.dev/v1.ArtifactDeclaration">
+[]ArtifactDeclaration
+</a>
+</em>
+</td>
+<td>
+<p>Outputs declares artifacts that the task produces.</p>
 </td>
 </tr>
 </tbody>
@@ -3071,6 +3183,20 @@ Matrix
 </tr>
 <tr>
 <td>
+<code>artifacts</code><br/>
+<em>
+<a href="#tekton.dev/v1.PipelineTaskArtifacts">
+PipelineTaskArtifacts
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Artifacts configures artifact bindings for this task.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>workspaces</code><br/>
 <em>
 <a href="#tekton.dev/v1.WorkspacePipelineTaskBinding">
@@ -3145,6 +3271,77 @@ PipelineTaskOnErrorType
 <em>(Optional)</em>
 <p>OnError defines the exiting behavior of a PipelineRun on error
 can be set to [ continue | stopAndFail ]</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tekton.dev/v1.PipelineTaskArtifactBinding">PipelineTaskArtifactBinding
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.PipelineTaskArtifacts">PipelineTaskArtifacts</a>)
+</p>
+<div>
+<p>PipelineTaskArtifactBinding binds an artifact input to an output from another task.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name matches the artifact input name in the referenced Task.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>from</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>From references an output from another task: &ldquo;tasks.<taskName>.outputs.<artifactName>&rdquo;</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tekton.dev/v1.PipelineTaskArtifacts">PipelineTaskArtifacts
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.PipelineTask">PipelineTask</a>)
+</p>
+<div>
+<p>PipelineTaskArtifacts configures artifact bindings for a PipelineTask.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+<a href="#tekton.dev/v1.PipelineTaskArtifactBinding">
+[]PipelineTaskArtifactBinding
+</a>
+</em>
+</td>
+<td>
+<p>Inputs binds artifact inputs from other tasks&rsquo; outputs.</p>
 </td>
 </tr>
 </tbody>
@@ -6379,6 +6576,21 @@ the steps start and end after the steps complete.</p>
 </td>
 <td>
 <p>Results are values that this Task can output</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>artifacts</code><br/>
+<em>
+<a href="#tekton.dev/v1.ArtifactDeclarations">
+ArtifactDeclarations
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Artifacts declares the inputs and outputs of the task for OCI-based transport.
+Requires enable-artifacts feature flag.</p>
 </td>
 </tr>
 </tbody>
