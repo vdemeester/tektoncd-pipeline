@@ -276,6 +276,13 @@ func (e Entrypointer) Go() error {
 			}
 		}
 
+		// Create output artifact directories so steps can write to them
+		for _, ao := range e.ArtifactOutputs {
+			if mkErr := os.MkdirAll(filepath.Dir(ao.Path), 0o755); mkErr != nil {
+				slog.Error("Error creating artifact output directory", slog.String("name", ao.Name), slog.Any("error", mkErr))
+			}
+		}
+
 		ctx, cancel = context.WithCancel(ctx)
 		if e.Timeout != nil && *e.Timeout > time.Duration(0) {
 			ctx, cancel = context.WithTimeout(ctx, *e.Timeout)
