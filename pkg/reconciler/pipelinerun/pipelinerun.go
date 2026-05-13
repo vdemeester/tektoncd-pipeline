@@ -1246,9 +1246,21 @@ func (c *Reconciler) createTaskRun(ctx context.Context, taskRunName string, para
 		tr.Annotations[workspace.AnnotationAffinityAssistantName] = aaAnnotationVal
 	}
 
+	// Resolve artifact input bindings from upstream tasks
+	cfg := config.FromContextOrDefaults(ctx)
+	if cfg.FeatureFlags.EnableArtifacts && rpt.PipelineTask.Artifacts != nil && len(rpt.PipelineTask.Artifacts.Inputs) > 0 {
+		taskArtifacts := facts.State.GetTaskRunsArtifacts()
+		resolvedInputs, resolveErr := resources.ResolveArtifactInputsForTask(rpt.PipelineTask, taskArtifacts)
+		if resolveErr != nil {
+			logger.Warnf("Failed to resolve artifact inputs for task %s: %v", rpt.PipelineTask.Name, resolveErr)
+		} else if len(resolvedInputs) > 0 {
+			inputsJSON, _ := json.Marshal(resolvedInputs)
+			tr.Annotations[resources.ArtifactInputsAnnotation] = string(inputsJSON)
+		}
+	}
+
 	logger.Infof("Creating a new TaskRun object %s for pipeline task %s", taskRunName, rpt.PipelineTask.Name)
 
-	cfg := config.FromContextOrDefaults(ctx)
 	if !cfg.FeatureFlags.EnableWaitExponentialBackoff {
 		return c.PipelineClientSet.TektonV1().TaskRuns(pr.Namespace).Create(ctx, tr, metav1.CreateOptions{})
 	}

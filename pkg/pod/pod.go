@@ -224,6 +224,23 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1.TaskRun, taskSpec v1.Ta
 			artifactArgs := artifactEntrypointArgs(&taskSpec, artifactStorageCfg.OCIRepository, artifactStorageCfg.Insecure)
 			commonExtraEntrypointArgs = append(commonExtraEntrypointArgs, artifactArgs...)
 		}
+		// If the pipeline reconciler resolved artifact input URIs, inject them
+		if inputsJSON, ok := taskRun.Annotations["tekton.dev/artifact-inputs"]; ok && inputsJSON != "" {
+			commonExtraEntrypointArgs = append(commonExtraEntrypointArgs, "-artifact_inputs", inputsJSON)
+			if artifactStorageCfg != nil && artifactStorageCfg.Insecure {
+				// Ensure insecure flag is set (may already be set by artifactEntrypointArgs)
+				hasInsecure := false
+				for _, a := range commonExtraEntrypointArgs {
+					if a == "-artifact_insecure" {
+						hasInsecure = true
+						break
+					}
+				}
+				if !hasInsecure {
+					commonExtraEntrypointArgs = append(commonExtraEntrypointArgs, "-artifact_insecure")
+				}
+			}
+		}
 	}
 
 	if featureFlags.EnableTerminationMessageCompression && !sidecarLogsResultsEnabled {

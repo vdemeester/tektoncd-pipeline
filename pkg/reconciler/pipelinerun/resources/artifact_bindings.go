@@ -18,10 +18,16 @@ package resources
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/entrypoint"
 )
+
+// ArtifactInputsAnnotation is the annotation key for passing resolved artifact input URIs
+// from the pipeline reconciler to the pod builder.
+const ArtifactInputsAnnotation = "tekton.dev/artifact-inputs"
 
 // ResolveArtifactBinding resolves a "from" reference (e.g., "tasks.build.outputs.image")
 // to the URI of the artifact from completed TaskRun artifacts.
@@ -52,4 +58,27 @@ func ResolveArtifactBinding(from string, artifacts map[string]*v1.Artifacts) (st
 	}
 
 	return "", fmt.Errorf("artifact %q not found in task %q outputs", artifactName, taskName)
+}
+
+// ResolveArtifactInputsForTask resolves all artifact input bindings for a PipelineTask,
+// returning ArtifactInput structs ready to be serialized as entrypoint args.
+func ResolveArtifactInputsForTask(pt *v1.PipelineTask, taskArtifacts map[string]*v1.Artifacts) ([]entrypoint.ArtifactInput, error) {
+	if pt.Artifacts == nil || len(pt.Artifacts.Inputs) == 0 {
+		return nil, nil
+	}
+
+	var inputs []entrypoint.ArtifactInput
+	for _, binding := range pt.Artifacts.Inputs {
+		uri, err := ResolveArtifactBinding(binding.From, taskArtifacts)
+		if err != nil {
+			return nil, fmt.Errorf("resolving artifact input %q: %w", binding.Name, err)
+		}
+		inputs = append(inputs, entrypoint.ArtifactInput{
+			Name: binding.Name,
+			URI:  uri,
+			Path: filepath.Join("/workspace/artifacts/inputs", binding.Name),
+		})
+	}
+
+	return inputs, nil
 }
