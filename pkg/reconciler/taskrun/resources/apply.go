@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -213,19 +214,13 @@ func applyStepActionParameters(step *v1.Step, spec *v1.TaskSpec, tr *v1.TaskRun,
 	// apply the processed parameters and merge all replacements (2,3,4)
 	procStringReplacements, procArrayReplacements, procObjectReplacements := replacementsFromParams(processedParams)
 	// merge replacements from defaults and processed params
-	for k, v := range procStringReplacements {
-		stringReplacements[k] = v
-	}
-	for k, v := range procArrayReplacements {
-		arrayReplacements[k] = v
-	}
+	maps.Copy(stringReplacements, procStringReplacements)
+	maps.Copy(arrayReplacements, procArrayReplacements)
 	for k, v := range procObjectReplacements {
 		if objectReplacements[k] == nil {
 			objectReplacements[k] = v
 		} else {
-			for key, val := range v {
-				objectReplacements[k][key] = val
-			}
+			maps.Copy(objectReplacements[k], v)
 		}
 	}
 
@@ -234,9 +229,7 @@ func applyStepActionParameters(step *v1.Step, spec *v1.TaskSpec, tr *v1.TaskRun,
 		return nil, err
 	} else {
 		// merge step result replacements into string replacements last
-		for k, v := range stepResultReplacements {
-			stringReplacements[k] = v
-		}
+		maps.Copy(stringReplacements, stepResultReplacements)
 	}
 
 	// check if there are duplicate keys in the replacements
@@ -340,9 +333,7 @@ func replacementsFromStepResults(step *v1.Step, stepParams v1.Params, defaults [
 						}
 						// with index notation, replace:
 						// $(params.p1[idx]) with $(steps.step1.results.foo[idx])
-						for k, v := range replacementsArrayIdxStepResults(step, d.Name, pr.ResourceName, pr.ResultName) {
-							stringReplacements[k] = v
-						}
+						maps.Copy(stringReplacements, replacementsArrayIdxStepResults(step, d.Name, pr.ResourceName, pr.ResultName))
 					case v1.ParamTypeString:
 						fallthrough
 					default:
@@ -369,12 +360,8 @@ func getTaskParameters(spec *v1.TaskSpec, tr *v1.TaskRun, defaults ...v1.ParamSp
 
 	// Set and overwrite params with the ones from the TaskRun
 	trStrings, trArrays, trObjects := replacementsFromParams(tr.Spec.Params)
-	for k, v := range trStrings {
-		stringReplacements[k] = v
-	}
-	for k, v := range trArrays {
-		arrayReplacements[k] = v
-	}
+	maps.Copy(stringReplacements, trStrings)
+	maps.Copy(arrayReplacements, trArrays)
 	for k, v := range trObjects {
 		for key, val := range v {
 			if objectReplacements != nil {

@@ -81,7 +81,7 @@ func NewController(ctx context.Context, resolver Resolver, modifiers ...Reconcil
 			FilterFunc: framework.FilterResolutionRequestsBySelector(resolver.GetSelector(ctx)),
 			Handler: cache.ResourceEventHandlerFuncs{
 				AddFunc: impl.Enqueue,
-				UpdateFunc: func(oldObj, newObj interface{}) {
+				UpdateFunc: func(oldObj, newObj any) {
 					impl.Enqueue(newObj)
 				},
 				// TODO(sbwsg): should we deliver delete events

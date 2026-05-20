@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -96,9 +97,7 @@ func GetTaskFunc(ctx context.Context, k8s kubernetes.Interface, tekton clientset
 			var url string
 			if ownerAsTR, ok := owner.(*v1.TaskRun); ok {
 				stringReplacements, arrayReplacements, _ := replacementsFromParams(ownerAsTR.Spec.Params)
-				for k, v := range getContextReplacements("", ownerAsTR) {
-					stringReplacements[k] = v
-				}
+				maps.Copy(stringReplacements, getContextReplacements("", ownerAsTR))
 				for _, p := range tr.Params {
 					p.Value.ApplyReplacements(stringReplacements, arrayReplacements, nil)
 					replacedParams = append(replacedParams, p)
@@ -181,12 +180,8 @@ func ApplyParameterSubstitutionInResolverParams(tr *v1.TaskRun, taskSpec v1.Task
 }
 
 func extendReplacements(stringReplacements map[string]string, arrayReplacements map[string][]string, objectReplacements map[string]map[string]string, stringReplacementsToAdd map[string]string, arrayReplacementsToAdd map[string][]string, objectReplacementsToAdd map[string]map[string]string) (map[string]string, map[string][]string, map[string]map[string]string) {
-	for k, v := range stringReplacementsToAdd {
-		stringReplacements[k] = v
-	}
-	for k, v := range arrayReplacementsToAdd {
-		arrayReplacements[k] = v
-	}
+	maps.Copy(stringReplacements, stringReplacementsToAdd)
+	maps.Copy(arrayReplacements, arrayReplacementsToAdd)
 	objectReplacements = extendObjectReplacements(objectReplacements, objectReplacementsToAdd)
 	return stringReplacements, arrayReplacements, objectReplacements
 }

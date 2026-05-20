@@ -308,39 +308,39 @@ type ParamValuesHolder struct {
 
 func TestParamValues_UnmarshalJSON(t *testing.T) {
 	cases := []struct {
-		input  map[string]interface{}
+		input  map[string]any
 		result v1beta1.ParamValue
 	}{
 		{
-			input:  map[string]interface{}{"val": 123},
+			input:  map[string]any{"val": 123},
 			result: *v1beta1.NewStructuredValues("123"),
 		},
 		{
-			input:  map[string]interface{}{"val": "123"},
+			input:  map[string]any{"val": "123"},
 			result: *v1beta1.NewStructuredValues("123"),
 		},
 		{
-			input:  map[string]interface{}{"val": ""},
+			input:  map[string]any{"val": ""},
 			result: *v1beta1.NewStructuredValues(""),
 		},
 		{
-			input:  map[string]interface{}{"val": nil},
+			input:  map[string]any{"val": nil},
 			result: v1beta1.ParamValue{Type: v1beta1.ParamTypeString, ArrayVal: nil},
 		},
 		{
-			input:  map[string]interface{}{"val": []string{}},
+			input:  map[string]any{"val": []string{}},
 			result: v1beta1.ParamValue{Type: v1beta1.ParamTypeArray, ArrayVal: []string{}},
 		},
 		{
-			input:  map[string]interface{}{"val": []string{"oneelement"}},
+			input:  map[string]any{"val": []string{"oneelement"}},
 			result: v1beta1.ParamValue{Type: v1beta1.ParamTypeArray, ArrayVal: []string{"oneelement"}},
 		},
 		{
-			input:  map[string]interface{}{"val": []string{"multiple", "elements"}},
+			input:  map[string]any{"val": []string{"multiple", "elements"}},
 			result: v1beta1.ParamValue{Type: v1beta1.ParamTypeArray, ArrayVal: []string{"multiple", "elements"}},
 		},
 		{
-			input:  map[string]interface{}{"val": map[string]string{"key1": "val1", "key2": "val2"}},
+			input:  map[string]any{"val": map[string]string{"key1": "val1", "key2": "val2"}},
 			result: v1beta1.ParamValue{Type: v1beta1.ParamTypeObject, ObjectVal: map[string]string{"key1": "val1", "key2": "val2"}},
 		},
 	}

@@ -57,7 +57,7 @@ var ResourceQuantityCmp = cmp.Comparer(func(x, y resource.Quantity) bool {
 	return x.Cmp(y) == 0
 })
 
-func equateAlways(_, _ interface{}) bool { return true }
+func equateAlways(_, _ any) bool { return true }
 
 // EquateEmptyResourceList returns a comparison option that will equate resource lists
 // if neither contains non-empty resource quantities.

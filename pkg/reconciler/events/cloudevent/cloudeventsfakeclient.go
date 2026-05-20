@@ -80,7 +80,7 @@ func (c FakeClient) Request(ctx context.Context, event cloudevents.Event) (*clou
 }
 
 // StartReceiver fakes StartReceiver method from cloudevents.Client
-func (c FakeClient) StartReceiver(ctx context.Context, fn interface{}) error {
+func (c FakeClient) StartReceiver(ctx context.Context, fn any) error {
 	return nil
 }
 

@@ -262,8 +262,8 @@ func verifyManifest(results map[string]result.RunResult) error {
 	if err != nil {
 		return err
 	}
-	s := strings.Split(manifestValue, ",")
-	for _, key := range s {
+	s := strings.SplitSeq(manifestValue, ",")
+	for key := range s {
 		_, found := results[key]
 		if key != "" && !found {
 			return fmt.Errorf("no result found for %s but is part of the manifest %s", key, manifestValue)
@@ -272,7 +272,7 @@ func verifyManifest(results map[string]result.RunResult) error {
 	return nil
 }
 
-func verifyAnnotation(pub interface{}, annotations map[string]string) error {
+func verifyAnnotation(pub any, annotations map[string]string) error {
 	signature, ok := annotations[taskRunStatusHashSigAnnotation]
 	if !ok {
 		return fmt.Errorf("no signature found for %s", taskRunStatusHashSigAnnotation)

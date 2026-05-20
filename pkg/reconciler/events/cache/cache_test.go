@@ -68,16 +68,16 @@ func hash(input string) string {
 	return strconv.FormatUint(hasher.Sum64(), 36)
 }
 
-func getEventData(t *testing.T, run interface{}) map[string]interface{} {
+func getEventData(t *testing.T, run any) map[string]any {
 	t.Helper()
-	cloudEventData := map[string]interface{}{}
+	cloudEventData := map[string]any{}
 	if v, ok := run.(*v1beta1.CustomRun); ok {
 		cloudEventData["customRun"] = v
 	}
 	return cloudEventData
 }
 
-func getEventToTest(t *testing.T, eventtype string, run interface{}) *event.Event {
+func getEventToTest(t *testing.T, eventtype string, run any) *event.Event {
 	t.Helper()
 	e := event.Event{
 		Context: event.EventContextV1{

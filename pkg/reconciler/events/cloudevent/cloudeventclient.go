@@ -91,7 +91,7 @@ func (c CloudClient) Request(ctx context.Context, event event.Event) (*cloudeven
 }
 
 // StartReceiver invokes client.StartReceiver
-func (c CloudClient) StartReceiver(ctx context.Context, fn interface{}) error {
+func (c CloudClient) StartReceiver(ctx context.Context, fn any) error {
 	return c.client.StartReceiver(ctx, fn)
 }
 

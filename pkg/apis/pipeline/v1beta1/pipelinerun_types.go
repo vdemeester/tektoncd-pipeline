@@ -424,21 +424,21 @@ func (pr *PipelineRunStatus) SetCondition(newCond *apis.Condition) {
 }
 
 // MarkSucceeded changes the Succeeded condition to True with the provided reason and message.
-func (pr *PipelineRunStatus) MarkSucceeded(reason, messageFormat string, messageA ...interface{}) {
+func (pr *PipelineRunStatus) MarkSucceeded(reason, messageFormat string, messageA ...any) {
 	pipelineRunCondSet.Manage(pr).MarkTrueWithReason(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 	succeeded := pr.GetCondition(apis.ConditionSucceeded)
 	pr.CompletionTime = &succeeded.LastTransitionTime.Inner
 }
 
 // MarkFailed changes the Succeeded condition to False with the provided reason and message.
-func (pr *PipelineRunStatus) MarkFailed(reason, messageFormat string, messageA ...interface{}) {
+func (pr *PipelineRunStatus) MarkFailed(reason, messageFormat string, messageA ...any) {
 	pipelineRunCondSet.Manage(pr).MarkFalse(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 	succeeded := pr.GetCondition(apis.ConditionSucceeded)
 	pr.CompletionTime = &succeeded.LastTransitionTime.Inner
 }
 
 // MarkRunning changes the Succeeded condition to Unknown with the provided reason and message.
-func (pr *PipelineRunStatus) MarkRunning(reason, messageFormat string, messageA ...interface{}) {
+func (pr *PipelineRunStatus) MarkRunning(reason, messageFormat string, messageA ...any) {
 	pipelineRunCondSet.Manage(pr).MarkUnknown(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 }
 

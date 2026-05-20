@@ -50,7 +50,7 @@ const (
 	TracerProviderName = "taskrun-reconciler"
 )
 
-var taskRunFilterManagedBy = func(obj interface{}) bool {
+var taskRunFilterManagedBy = func(obj any) bool {
 	tr, ok := obj.(*v1.TaskRun)
 	if !ok {
 		return true

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -67,9 +68,7 @@ func GetPipelineFunc(ctx context.Context, k8s kubernetes.Interface, tekton clien
 	case pr != nil && pr.Resolver != "" && requester != nil:
 		return func(ctx context.Context, name string) (*v1.Pipeline, *v1.RefSource, *trustedresources.VerificationResult, error) {
 			stringReplacements, arrayReplacements, objectReplacements := paramsFromPipelineRun(pipelineRun)
-			for k, v := range GetContextReplacements("", pipelineRun) {
-				stringReplacements[k] = v
-			}
+			maps.Copy(stringReplacements, GetContextReplacements("", pipelineRun))
 			replacedParams := pr.Params.ReplaceVariables(stringReplacements, arrayReplacements, objectReplacements)
 			var url string
 			// The name is url-like so its not a local reference.

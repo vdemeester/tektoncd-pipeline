@@ -64,7 +64,7 @@ type RunStatusFields struct {
 
 	// ExtraFields holds arbitrary fields provided by the custom task
 	// controller.
-	ExtraFields runtime.RawExtension `json:"extraFields,omitempty"`
+	ExtraFields runtime.RawExtension `json:"extraFields"`
 }
 
 // RunResult used to describe the results of a task
@@ -109,26 +109,26 @@ func (r *RunStatus) SetCondition(newCond *apis.Condition) {
 }
 
 // MarkRunSucceeded changes the Succeeded condition to True with the provided reason and message.
-func (r *RunStatus) MarkRunSucceeded(reason, messageFormat string, messageA ...interface{}) {
+func (r *RunStatus) MarkRunSucceeded(reason, messageFormat string, messageA ...any) {
 	runCondSet.Manage(r).MarkTrueWithReason(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 	succeeded := r.GetCondition(apis.ConditionSucceeded)
 	r.CompletionTime = &succeeded.LastTransitionTime.Inner
 }
 
 // MarkRunFailed changes the Succeeded condition to False with the provided reason and message.
-func (r *RunStatus) MarkRunFailed(reason, messageFormat string, messageA ...interface{}) {
+func (r *RunStatus) MarkRunFailed(reason, messageFormat string, messageA ...any) {
 	runCondSet.Manage(r).MarkFalse(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 	succeeded := r.GetCondition(apis.ConditionSucceeded)
 	r.CompletionTime = &succeeded.LastTransitionTime.Inner
 }
 
 // MarkRunRunning changes the Succeeded condition to Unknown with the provided reason and message.
-func (r *RunStatus) MarkRunRunning(reason, messageFormat string, messageA ...interface{}) {
+func (r *RunStatus) MarkRunRunning(reason, messageFormat string, messageA ...any) {
 	runCondSet.Manage(r).MarkUnknown(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 }
 
 // DecodeExtraFields deserializes the extra fields in the Run status.
-func (r *RunStatus) DecodeExtraFields(into interface{}) error {
+func (r *RunStatus) DecodeExtraFields(into any) error {
 	if len(r.ExtraFields.Raw) == 0 {
 		return nil
 	}
@@ -136,7 +136,7 @@ func (r *RunStatus) DecodeExtraFields(into interface{}) error {
 }
 
 // EncodeExtraFields serializes the extra fields in the Run status.
-func (r *RunStatus) EncodeExtraFields(from interface{}) error {
+func (r *RunStatus) EncodeExtraFields(from any) error {
 	data, err := json.Marshal(from)
 	if err != nil {
 		return err

@@ -87,11 +87,9 @@ func generateSecret(host string, username string, password string) *corev1.Secre
 		},
 		Type: corev1.SecretTypeDockercfg,
 		Data: map[string][]byte{
-			corev1.DockerConfigKey: []byte(
-				fmt.Sprintf(`{%q: {"auth": %q}}`,
-					host,
-					base64.StdEncoding.EncodeToString([]byte(username+":"+password)),
-				),
+			corev1.DockerConfigKey: fmt.Appendf(nil, `{%q: {"auth": %q}}`,
+				host,
+				base64.StdEncoding.EncodeToString([]byte(username+":"+password)),
 			),
 		},
 	}

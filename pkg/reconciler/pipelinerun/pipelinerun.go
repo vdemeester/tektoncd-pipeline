@@ -1600,9 +1600,7 @@ func combinedSubPath(workspaceSubPath string, pipelineTaskSubPath string) string
 func createChildResourceAnnotations(pr *v1.PipelineRun) map[string]string {
 	// propagate annotations from PipelineRun to child (PinP) PipelineRun/TaskRun/CustomRun
 	annotations := make(map[string]string, len(pr.ObjectMeta.Annotations)+1)
-	for key, val := range pr.ObjectMeta.Annotations {
-		annotations[key] = val
-	}
+	maps.Copy(annotations, pr.ObjectMeta.Annotations)
 	return kmap.Filter(annotations, func(s string) bool {
 		return filterReservedAnnotationRegexp.MatchString(s)
 	})
@@ -1648,9 +1646,7 @@ func createChildResourceLabels(pr *v1.PipelineRun, pipelineTaskName string, incl
 	// propagate labels from PipelineRun to child (PinP) PipelineRun/TaskRun/CustomRun
 	labels := make(map[string]string, len(pr.ObjectMeta.Labels)+1)
 	if includePipelineRunLabels {
-		for key, val := range pr.ObjectMeta.Labels {
-			labels[key] = val
-		}
+		maps.Copy(labels, pr.ObjectMeta.Labels)
 	}
 	labels[pipeline.PipelineRunLabelKey] = pr.Name
 	labels[pipeline.PipelineRunUIDLabelKey] = string(pr.UID)

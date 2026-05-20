@@ -52,10 +52,10 @@ const (
 type PipelineResource struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Spec holds the desired state of the PipelineResource from the client
-	Spec PipelineResourceSpec `json:"spec,omitempty"`
+	Spec PipelineResourceSpec `json:"spec"`
 
 	// Status is used to communicate the observed state of the PipelineResource from
 	// the controller, but was unused as there is no controller for PipelineResource.
@@ -143,6 +143,6 @@ type ResourceDeclaration struct {
 type PipelineResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 	Items           []PipelineResource `json:"items"`
 }

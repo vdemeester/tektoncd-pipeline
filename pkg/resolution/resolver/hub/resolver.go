@@ -216,7 +216,7 @@ func isDisabled(ctx context.Context) bool {
 	return !cfg.FeatureFlags.EnableHubResolver
 }
 
-func fetchHubResource(ctx context.Context, apiEndpoint string, v interface{}) error {
+func fetchHubResource(ctx context.Context, apiEndpoint string, v any) error {
 	// #nosec G107 -- URL cannot be constant in this case.
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiEndpoint, nil)
 	if err != nil {

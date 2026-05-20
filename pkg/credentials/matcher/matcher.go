@@ -50,7 +50,7 @@ func GetSecretType(secret Secret) string {
 	}
 	v := reflect.ValueOf(secret)
 	// If a pointer, check if it's nil before dereferencing
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return ""
 		}

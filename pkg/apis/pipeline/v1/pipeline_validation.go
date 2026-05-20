@@ -618,12 +618,8 @@ func validateContainsExecutionStatusVariablesDisallowed(expressions []string, pa
 func containsExecutionStatusReferences(expressions []string) bool {
 	// validate tasks.pipelineTask.status/tasks.status if this expression is not a result reference
 	if !LooksLikeContainsResultRefs(expressions) {
-		for _, e := range expressions {
-			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-			// or an aggregate status - $(tasks.status) or reason - $(tasks.taskname.reason)
-			if containsExecutionStatusRef(e) {
-				return true
-			}
+		if slices.ContainsFunc(expressions, containsExecutionStatusRef) {
+			return true
 		}
 	}
 	return false
@@ -723,8 +719,8 @@ func getPipelineTasksNames(pipelineTasks []PipelineTask) sets.String {
 func taskContainsResult(resultExpression string, pipelineTaskNames sets.String, pipelineFinallyTaskNames sets.String) bool {
 	// split incase of multiple resultExpressions in the same result.Value string
 	// i.e "$(task.<task-name).result.<result-name>) - $(task2.<task2-name).result2.<result2-name>)"
-	split := strings.Split(resultExpression, "$")
-	for _, expression := range split {
+	split := strings.SplitSeq(resultExpression, "$")
+	for expression := range split {
 		if expression != "" {
 			value := stripVarSubExpression("$" + expression)
 			pr, err := resultref.ParseTaskExpression(value)

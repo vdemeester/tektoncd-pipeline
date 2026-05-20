@@ -63,8 +63,8 @@ func New(service string, logger *zap.SugaredLogger) *tracerProvider {
 }
 
 // OnStore configures tracerProvider dynamically
-func (t *tracerProvider) OnStore(lister listerv1.SecretLister) func(name string, value interface{}) {
-	return func(name string, value interface{}) {
+func (t *tracerProvider) OnStore(lister listerv1.SecretLister) func(name string, value any) {
+	return func(name string, value any) {
 		if name != config.GetTracingConfigName() {
 			return
 		}
@@ -104,7 +104,7 @@ func (t *tracerProvider) Tracer(name string, options ...trace.TracerOption) trac
 }
 
 // Handler is called by the informer when the secret is updated
-func (t *tracerProvider) Handler(obj interface{}) {
+func (t *tracerProvider) Handler(obj any) {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		t.logger.Error("Failed to do type assertion for Secret")

@@ -41,7 +41,7 @@ var trueB = true
 func TestFilterCustomRunRef(t *testing.T) {
 	for _, c := range []struct {
 		desc string
-		in   interface{}
+		in   any
 		want bool
 	}{{
 		desc: "not a CustomRun",
@@ -174,7 +174,7 @@ func TestFilterCustomRunRef(t *testing.T) {
 func TestFilterOwnerCustomRunRef(t *testing.T) {
 	for _, c := range []struct {
 		desc  string
-		in    interface{}
+		in    any
 		owner *v1beta1.CustomRun
 		want  bool
 	}{{

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,15 +28,11 @@ func PrepareObjectMeta(in metav1.Object) metav1.ObjectMeta {
 
 	if in.GetLabels() != nil {
 		outMeta.Labels = make(map[string]string)
-		for k, v := range in.GetLabels() {
-			outMeta.Labels[k] = v
-		}
+		maps.Copy(outMeta.Labels, in.GetLabels())
 	}
 
 	outMeta.Annotations = make(map[string]string)
-	for k, v := range in.GetAnnotations() {
-		outMeta.Annotations[k] = v
-	}
+	maps.Copy(outMeta.Annotations, in.GetAnnotations())
 
 	// exclude the annotations added by other components
 	delete(outMeta.Annotations, "kubectl-client-side-apply")
@@ -46,7 +43,7 @@ func PrepareObjectMeta(in metav1.Object) metav1.ObjectMeta {
 }
 
 // ComputeSha256Checksum computes the sha256 checksum of the tekton object.
-func ComputeSha256Checksum(obj interface{}) ([]byte, error) {
+func ComputeSha256Checksum(obj any) ([]byte, error) {
 	ts, err := json.Marshal(obj)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal the object: %w", err)

@@ -17,6 +17,7 @@ limitations under the License.
 package spire
 
 import (
+	"maps"
 	"testing"
 	"time"
 
@@ -213,9 +214,7 @@ func TestMock_CheckTamper(t *testing.T) {
 			}
 
 			if tt.setAnnotations != nil {
-				for k, v := range tt.setAnnotations {
-					tr.Status.Status.Annotations[k] = v
-				}
+				maps.Copy(tr.Status.Status.Annotations, tt.setAnnotations)
 			}
 
 			if tt.modifyStatus {

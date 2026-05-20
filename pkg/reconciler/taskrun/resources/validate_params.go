@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"maps"
 
 	pipelineErrors "github.com/tektoncd/pipeline/pkg/apis/pipeline/errors"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -24,9 +25,7 @@ func ValidateParamArrayIndex(ts *v1.TaskSpec, params v1.Params) error {
 // Example of arrayIndexingReferences: ["$(params.a-array-param[1])", "$(params.b-array-param[2])"]
 func ValidateOutOfBoundArrayParams(declarations v1.ParamSpecs, params v1.Params, arrayIndexingReferences sets.String) error {
 	arrayParamLengths := declarations.ExtractDefaultParamArrayLengths()
-	for k, v := range params.ExtractParamArrayLengths() {
-		arrayParamLengths[k] = v
-	}
+	maps.Copy(arrayParamLengths, params.ExtractParamArrayLengths())
 	outofBoundParams := sets.String{}
 	for val := range arrayIndexingReferences {
 		indexString := substitution.ExtractIndexString(val)

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -4128,13 +4129,7 @@ func TestPodBuild_CompressTerminationMessage(t *testing.T) {
 			}
 
 			stepContainer := got.Spec.Containers[0]
-			hasFlag := false
-			for _, arg := range stepContainer.Args {
-				if arg == "-compress_termination_message=true" {
-					hasFlag = true
-					break
-				}
-			}
+			hasFlag := slices.Contains(stepContainer.Args, "-compress_termination_message=true")
 			if hasFlag != tc.wantFlag {
 				t.Errorf("compress_termination_message flag: got %v, want %v; args: %v", hasFlag, tc.wantFlag, stepContainer.Args)
 			}

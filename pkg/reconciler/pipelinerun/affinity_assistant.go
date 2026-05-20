@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -295,9 +296,7 @@ func GetAffinityAssistantName(pipelineWorkspaceName string, pipelineRunName stri
 func getStatefulSetLabels(pr *v1.PipelineRun, affinityAssistantName string) map[string]string {
 	// Propagate labels from PipelineRun to StatefulSet.
 	labels := make(map[string]string, len(pr.ObjectMeta.Labels)+1)
-	for key, val := range pr.ObjectMeta.Labels {
-		labels[key] = val
-	}
+	maps.Copy(labels, pr.ObjectMeta.Labels)
 	labels[pipeline.PipelineRunLabelKey] = pr.Name
 
 	// LabelInstance is used to configure PodAffinity for all TaskRuns belonging to this Affinity Assistant

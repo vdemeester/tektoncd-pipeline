@@ -24,6 +24,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -198,10 +199,5 @@ func simplifyDoc(doc *ast.CommentGroup, name string) bool {
 }
 
 func contains(indices []int, target int) bool {
-	for _, i := range indices {
-		if i == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(indices, target)
 }

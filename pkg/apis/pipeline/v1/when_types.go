@@ -19,6 +19,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/tektoncd/pipeline/pkg/substitution"
 	"k8s.io/apimachinery/pkg/selection"
@@ -46,12 +47,7 @@ type WhenExpression struct {
 }
 
 func (we *WhenExpression) isInputInValues() bool {
-	for i := range we.Values {
-		if we.Values[i] == we.Input {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(we.Values, we.Input)
 }
 
 func (we *WhenExpression) isTrue() bool {

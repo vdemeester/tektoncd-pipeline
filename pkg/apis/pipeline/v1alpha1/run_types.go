@@ -38,11 +38,11 @@ type EmbeddedRunSpec struct {
 	runtime.TypeMeta `json:",inline"`
 
 	// +optional
-	Metadata v1beta1.PipelineTaskMetadata `json:"metadata,omitempty"`
+	Metadata v1beta1.PipelineTaskMetadata `json:"metadata"`
 
 	// Spec is a specification of a custom task
 	// +optional
-	Spec runtime.RawExtension `json:"spec,omitempty"`
+	Spec runtime.RawExtension `json:"spec"`
 }
 
 // RunSpec defines the desired state of Run
@@ -176,12 +176,12 @@ type RunResult = runv1alpha1.RunResult
 type Run struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata"`
 
 	// +optional
-	Spec RunSpec `json:"spec,omitempty"`
+	Spec RunSpec `json:"spec"`
 	// +optional
-	Status RunStatus `json:"status,omitempty"`
+	Status RunStatus `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -190,7 +190,7 @@ type Run struct {
 type RunList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 	Items           []Run `json:"items"`
 }
 

@@ -84,9 +84,7 @@ func (cs Combinations) overwriteCombinations(ics Combinations) {
 			if paramCombination.contains(includeCombination) {
 				// overwrite the parameter name and value in existing combination
 				// with the include combination
-				for name, val := range includeCombination {
-					paramCombination[name] = val
-				}
+				maps.Copy(paramCombination, includeCombination)
 			}
 		}
 	}

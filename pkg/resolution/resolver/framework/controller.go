@@ -85,7 +85,7 @@ func NewController(ctx context.Context, resolver Resolver, modifiers ...Reconcil
 			FilterFunc: FilterResolutionRequestsBySelector(resolver.GetSelector(ctx)),
 			Handler: cache.ResourceEventHandlerFuncs{
 				AddFunc: impl.Enqueue,
-				UpdateFunc: func(oldObj, newObj interface{}) {
+				UpdateFunc: func(oldObj, newObj any) {
 					impl.Enqueue(newObj)
 				},
 				// TODO(sbwsg): should we deliver delete events
@@ -129,8 +129,8 @@ func applyModifiersAndDefaults(ctx context.Context, r *Reconciler, modifiers []R
 	}
 }
 
-func FilterResolutionRequestsBySelector(selector map[string]string) func(obj interface{}) bool {
-	return func(obj interface{}) bool {
+func FilterResolutionRequestsBySelector(selector map[string]string) func(obj any) bool {
+	return func(obj any) bool {
 		rr, ok := obj.(*v1beta1.ResolutionRequest)
 		if !ok {
 			return false

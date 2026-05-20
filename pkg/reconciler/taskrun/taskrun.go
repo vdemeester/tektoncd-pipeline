@@ -1079,13 +1079,7 @@ func applyParamsContextsResultsAndWorkspaces(ctx context.Context, tr *v1.TaskRun
 	}
 
 	for _, trw := range tr.Spec.Workspaces {
-		skip := false
-		for _, tw := range twn {
-			if tw == trw.Name {
-				skip = true
-				break
-			}
-		}
+		skip := slices.Contains(twn, trw.Name)
 		if !skip {
 			ts.Workspaces = append(ts.Workspaces, v1.WorkspaceDeclaration{Name: trw.Name})
 		}

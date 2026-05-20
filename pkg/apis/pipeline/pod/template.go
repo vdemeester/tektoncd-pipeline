@@ -324,7 +324,7 @@ func mergeByName[T any](base, overrides []T) []T {
 
 // getName returns the name of the given item, or an empty string if the item
 // is not a supported type.
-func getName(item interface{}) string {
+func getName(item any) string {
 	switch item := item.(type) {
 	case corev1.EnvVar:
 		return item.Name

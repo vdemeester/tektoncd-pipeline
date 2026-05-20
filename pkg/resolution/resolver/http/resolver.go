@@ -352,7 +352,7 @@ func getBasicAuthSecret(ctx context.Context, params map[string]string, kubeclien
 		return "", err
 	}
 	return "Basic " + base64.StdEncoding.EncodeToString(
-		[]byte(fmt.Sprintf("%s:%s", userName, secretVal))), nil
+		fmt.Appendf(nil, "%s:%s", userName, secretVal)), nil
 }
 
 func ValidateParams(ctx context.Context, params []pipelinev1.Param) error {

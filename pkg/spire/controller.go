@@ -48,8 +48,8 @@ func init() {
 type controllerKey struct{}
 
 // OnStore stores the changed spire config into the SpireClientApi
-func OnStore(ctx context.Context, logger *zap.SugaredLogger) func(name string, value interface{}) {
-	return func(name string, value interface{}) {
+func OnStore(ctx context.Context, logger *zap.SugaredLogger) func(name string, value any) {
+	return func(name string, value any) {
 		if name == config.GetSpireConfigName() {
 			cfg, ok := value.(*spireconfig.SpireConfig)
 			if !ok {

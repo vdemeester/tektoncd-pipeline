@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"testing"
 	"time"
 
@@ -323,9 +324,7 @@ func TestCheckTamper(t *testing.T) {
 			}
 
 			if tt.setAnnotations != nil {
-				for k, v := range tt.setAnnotations {
-					tr.Status.Status.Annotations[k] = v
-				}
+				maps.Copy(tr.Status.Status.Annotations, tt.setAnnotations)
 			}
 
 			if tt.modifyStatus {

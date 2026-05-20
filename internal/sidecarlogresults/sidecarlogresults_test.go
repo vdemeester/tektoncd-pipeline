@@ -24,7 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -78,8 +78,8 @@ func TestLookForResults_FanOutAndWait(t *testing.T) {
 				t.Fatalf("Did not expect any error but got: %v", err)
 			}
 			// sort because the order of results is not always the same because of go routines.
-			sort.Slice(wantResults, func(i int, j int) bool { return wantResults[i] < wantResults[j] })
-			sort.Slice(got.Bytes(), func(i int, j int) bool { return got.Bytes()[i] < got.Bytes()[j] })
+			slices.Sort(wantResults)
+			slices.Sort(got.Bytes())
 			if d := cmp.Diff(wantResults, got.Bytes()); d != "" {
 				t.Error(diff.PrintWantGot(d))
 			}
@@ -768,13 +768,13 @@ func TestLookForArtifacts(t *testing.T) {
 			if (err != nil) != tc.wantErr {
 				t.Errorf("error checking failed, wantErr: %v, got: %v", tc.wantErr, err)
 			}
-			want := ""
+			var want strings.Builder
 			for _, logResult := range tc.expected {
-				want += mustJSON(logResult) + "\n"
+				want.WriteString(mustJSON(logResult) + "\n")
 			}
 			got := buf.String()
 
-			if d := cmp.Diff(want, got); d != "" {
+			if d := cmp.Diff(want.String(), got); d != "" {
 				t.Error(diff.PrintWantGot(d))
 			}
 		})

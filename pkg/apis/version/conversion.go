@@ -25,7 +25,7 @@ import (
 
 // SerializeToMetadata serializes the input field and adds it as an annotation to
 // the metadata under the input key.
-func SerializeToMetadata(meta *metav1.ObjectMeta, field interface{}, key string) error {
+func SerializeToMetadata(meta *metav1.ObjectMeta, field any, key string) error {
 	bytes, err := json.Marshal(field)
 	if err != nil {
 		return fmt.Errorf("error serializing field: %w", err)
@@ -40,7 +40,7 @@ func SerializeToMetadata(meta *metav1.ObjectMeta, field interface{}, key string)
 // DeserializeFromMetadata takes the value of the input key from the metadata's annotations,
 // deserializes it into "to", and removes the key from the metadata's annotations.
 // Returns nil if the key is not present in the annotations.
-func DeserializeFromMetadata(meta *metav1.ObjectMeta, to interface{}, key string) error {
+func DeserializeFromMetadata(meta *metav1.ObjectMeta, to any, key string) error {
 	if meta == nil || meta.Annotations == nil {
 		return nil
 	}

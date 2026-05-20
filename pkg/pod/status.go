@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -1002,12 +1003,7 @@ func isImageErrorReason(reason string) bool {
 		"RegistryUnavailable",
 		"InvalidImageName",
 	}
-	for _, imageReason := range imageErrorReasons {
-		if imageReason == reason {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(imageErrorReasons, reason)
 }
 
 func getWaitingMessage(pod *corev1.Pod) string {

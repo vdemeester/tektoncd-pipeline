@@ -26,56 +26,56 @@ import (
 func TestMergeByName(t *testing.T) {
 	type testCase struct {
 		name      string
-		base      []interface{}
-		overrides []interface{}
-		expected  []interface{}
+		base      []any
+		overrides []any
+		expected  []any
 	}
 
 	testCases := []testCase{
 		{
 			name:      "empty overrides",
-			base:      []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
-			overrides: []interface{}{},
-			expected:  []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			base:      []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			overrides: []any{},
+			expected:  []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
 		},
 		{
 			name:      "empty base",
-			base:      []interface{}{},
-			overrides: []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
-			expected:  []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			base:      []any{},
+			overrides: []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			expected:  []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
 		},
 		{
 			name:      "same name",
-			base:      []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
-			overrides: []interface{}{corev1.EnvVar{Name: "foo", Value: "baz"}},
-			expected:  []interface{}{corev1.EnvVar{Name: "foo", Value: "baz"}},
+			base:      []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			overrides: []any{corev1.EnvVar{Name: "foo", Value: "baz"}},
+			expected:  []any{corev1.EnvVar{Name: "foo", Value: "baz"}},
 		},
 		{
 			name:      "different name",
-			base:      []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
-			overrides: []interface{}{corev1.EnvVar{Name: "bar", Value: "baz"}},
-			expected:  []interface{}{corev1.EnvVar{Name: "bar", Value: "baz"}, corev1.EnvVar{Name: "foo", Value: "bar"}},
+			base:      []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			overrides: []any{corev1.EnvVar{Name: "bar", Value: "baz"}},
+			expected:  []any{corev1.EnvVar{Name: "bar", Value: "baz"}, corev1.EnvVar{Name: "foo", Value: "bar"}},
 		},
 		{
 			name:      "different volume name",
-			base:      []interface{}{corev1.Volume{Name: "foo", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
-			overrides: []interface{}{corev1.Volume{Name: "bar", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
-			expected: []interface{}{
+			base:      []any{corev1.Volume{Name: "foo", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
+			overrides: []any{corev1.Volume{Name: "bar", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
+			expected: []any{
 				corev1.Volume{Name: "bar", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
 				corev1.Volume{Name: "foo", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
 			},
 		},
 		{
 			name:      "unsupported type",
-			base:      []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
-			overrides: []interface{}{42},
-			expected:  []interface{}{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			base:      []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
+			overrides: []any{42},
+			expected:  []any{corev1.EnvVar{Name: "foo", Value: "bar"}},
 		},
 		{
 			name:      "empty name",
-			base:      []interface{}{corev1.EnvVar{Name: "", Value: "bar"}},
-			overrides: []interface{}{corev1.EnvVar{Name: "", Value: "bar"}},
-			expected:  []interface{}{},
+			base:      []any{corev1.EnvVar{Name: "", Value: "bar"}},
+			overrides: []any{corev1.EnvVar{Name: "", Value: "bar"}},
+			expected:  []any{},
 		},
 	}
 

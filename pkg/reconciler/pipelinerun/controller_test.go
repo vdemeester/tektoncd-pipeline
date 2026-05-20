@@ -51,7 +51,7 @@ func TestPipelineRunFilterManagedBy(t *testing.T) {
 
 	testCases := []struct {
 		name     string
-		obj      interface{}
+		obj      any
 		expected bool
 	}{
 		{

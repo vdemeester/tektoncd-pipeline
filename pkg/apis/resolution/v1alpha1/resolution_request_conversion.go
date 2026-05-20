@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
 	pipelinev1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -67,9 +68,7 @@ func (rrs *ResolutionRequestStatus) convertTo(ctx context.Context, sink *v1beta1
 		refSource.URI = rrs.RefSource.URI
 		refSource.EntryPoint = rrs.RefSource.EntryPoint
 		digest := make(map[string]string)
-		for k, v := range rrs.RefSource.Digest {
-			digest[k] = v
-		}
+		maps.Copy(digest, rrs.RefSource.Digest)
 		refSource.Digest = digest
 		sink.RefSource = &refSource
 	}
@@ -121,9 +120,7 @@ func (rrs *ResolutionRequestStatus) convertFrom(ctx context.Context, from *v1bet
 		refSource.URI = from.RefSource.URI
 		refSource.EntryPoint = from.RefSource.EntryPoint
 		digest := make(map[string]string)
-		for k, v := range from.RefSource.Digest {
-			digest[k] = v
-		}
+		maps.Copy(digest, from.RefSource.Digest)
 		refSource.Digest = digest
 		rrs.RefSource = &refSource
 	} else if from.Source != nil {
@@ -131,9 +128,7 @@ func (rrs *ResolutionRequestStatus) convertFrom(ctx context.Context, from *v1bet
 		refSource.URI = from.Source.URI
 		refSource.EntryPoint = from.Source.EntryPoint
 		digest := make(map[string]string)
-		for k, v := range from.Source.Digest {
-			digest[k] = v
-		}
+		maps.Copy(digest, from.Source.Digest)
 		refSource.Digest = digest
 		rrs.RefSource = &refSource
 	}

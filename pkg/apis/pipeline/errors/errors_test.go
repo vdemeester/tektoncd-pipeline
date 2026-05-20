@@ -55,11 +55,11 @@ func TestResolutionErrorMessage(t *testing.T) {
 func TestLabelsUserError(t *testing.T) {
 	const hasUserError = true
 
-	makeMessages := func(hasUserError bool) []interface{} {
+	makeMessages := func(hasUserError bool) []any {
 		msgs := []string{"foo error message", "bar error format"}
 		original := errors.New("orignal error")
 
-		messages := make([]interface{}, 0)
+		messages := make([]any, 0)
 		for _, msg := range msgs {
 			messages = append(messages, msg)
 		}
@@ -73,7 +73,7 @@ func TestLabelsUserError(t *testing.T) {
 	tcs := []struct {
 		description   string
 		messageFormat string
-		messages      []interface{}
+		messages      []any
 		expected      string
 	}{{
 		description:   "error messages with user error",

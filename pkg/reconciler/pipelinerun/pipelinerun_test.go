@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"strconv"
 	"testing"
@@ -8490,7 +8491,6 @@ func getTaskRunStatus(t string, status corev1.ConditionStatus) *v1.PipelineRunTa
 	}
 }
 
-
 // this test validates taskSpec metadata is embedded into task run
 func TestReconcilePipeline_TaskSpecMetadata(t *testing.T) {
 	names.TestingSeed()
@@ -9972,9 +9972,7 @@ spec:
 
 func getTaskRunWithTaskSpec(tr, pr, p, t string, labels, annotations map[string]string) *v1.TaskRun {
 	om := taskRunObjectMeta(tr, "foo", pr, p, t, false)
-	for k, v := range labels {
-		om.Labels[k] = v
-	}
+	maps.Copy(om.Labels, labels)
 	om.Annotations = annotations
 
 	return &v1.TaskRun{
@@ -10028,9 +10026,7 @@ func taskRunObjectMeta(trName, ns, prName, pipelineName, pipelineTaskName string
 
 func taskRunObjectMetaWithAnnotations(trName, ns, prName, pipelineName, pipelineTaskName string, skipMemberOfLabel bool, annotations map[string]string) metav1.ObjectMeta {
 	om := taskRunObjectMeta(trName, ns, prName, pipelineName, pipelineTaskName, skipMemberOfLabel)
-	for k, v := range annotations {
-		om.Annotations[k] = v
-	}
+	maps.Copy(om.Annotations, annotations)
 	return om
 }
 
@@ -18619,7 +18615,7 @@ func getSignedV1Task(unsigned *pipelinev1.Task, signer signature.Signer, name st
 	return signed, nil
 }
 
-func signInterface(signer signature.Signer, i interface{}) ([]byte, error) {
+func signInterface(signer signature.Signer, i any) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer is nil")
 	}

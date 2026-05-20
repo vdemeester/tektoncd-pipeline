@@ -705,11 +705,11 @@ func TestPipelineRunMarkFailedCondition(t *testing.T) {
 	failedRunReason := v1.PipelineRunReasonFailed
 	messageFormat := "error bar occurred %s"
 
-	makeMessages := func(hasUserError bool) []interface{} {
+	makeMessages := func(hasUserError bool) []any {
 		errorMsg := "baz error message"
 		original := errors.New("orignal error")
 
-		messages := make([]interface{}, 0)
+		messages := make([]any, 0)
 		if hasUserError {
 			messages = append(messages, pipelineErrors.WrapUserError(original))
 		} else {

@@ -60,7 +60,7 @@ func TestSignInterface(t *testing.T) {
 	tcs := []struct {
 		name     string
 		signer   signature.SignerVerifier
-		target   interface{}
+		target   any
 		expected string
 		wantErr  bool
 	}{{

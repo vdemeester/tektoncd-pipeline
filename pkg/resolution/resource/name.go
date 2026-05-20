@@ -22,6 +22,7 @@ import (
 	"hash"
 	"hash/fnv"
 	"sort"
+	"strings"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/apis/resolution/v1beta1"
@@ -146,23 +147,24 @@ func GenerateDeterministicNameFromSpec(prefix, base string, resolutionSpec *v1be
 // when a resolver error occurred.  The TaskRef name does not have to be set, where
 // the specific resolver gets the name from the parameters.
 func GenerateErrorLogString(resolverType string, params v1.Params) string {
-	paramString := fmt.Sprintf("resolver type %s\n", resolverType)
+	var paramString strings.Builder
+	paramString.WriteString(fmt.Sprintf("resolver type %s\n", resolverType))
 	for _, p := range params {
 		if p.Name == ParamName {
 			name := p.Value.StringVal
 			if p.Value.Type != v1.ParamTypeString {
 				asJSON, err := p.Value.MarshalJSON()
 				if err != nil {
-					paramString += fmt.Sprintf("name could not be marshalled: %s\n", err.Error())
+					paramString.WriteString(fmt.Sprintf("name could not be marshalled: %s\n", err.Error()))
 					continue
 				}
 				name = string(asJSON)
 			}
-			paramString += fmt.Sprintf("name = %s\n", name)
+			paramString.WriteString(fmt.Sprintf("name = %s\n", name))
 		}
 		if p.Name == ParamURL {
-			paramString += fmt.Sprintf("url = %s\n", p.Value.StringVal)
+			paramString.WriteString(fmt.Sprintf("url = %s\n", p.Value.StringVal))
 		}
 	}
-	return paramString
+	return paramString.String()
 }

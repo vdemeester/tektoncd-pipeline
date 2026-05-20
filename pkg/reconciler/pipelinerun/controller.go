@@ -48,7 +48,7 @@ const (
 	TracerProviderName = "pipelinerun-reconciler"
 )
 
-var pipelineRunFilterManagedBy = func(obj interface{}) bool {
+var pipelineRunFilterManagedBy = func(obj any) bool {
 	pr, ok := obj.(*v1.PipelineRun)
 	if !ok {
 		return true

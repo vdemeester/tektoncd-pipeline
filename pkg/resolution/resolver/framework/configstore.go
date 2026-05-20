@@ -18,6 +18,7 @@ package framework
 
 import (
 	"context"
+	"maps"
 
 	resolverconfig "github.com/tektoncd/pipeline/pkg/apis/config/resolver"
 	corev1 "k8s.io/api/core/v1"
@@ -36,9 +37,7 @@ func DataFromConfigMap(config *corev1.ConfigMap) (map[string]string, error) {
 	if config == nil {
 		return resolverConfig, nil
 	}
-	for key, value := range config.Data {
-		resolverConfig[key] = value
-	}
+	maps.Copy(resolverConfig, config.Data)
 	return resolverConfig, nil
 }
 
@@ -79,9 +78,7 @@ func (store *ConfigStore) GetResolverConfig() map[string]string {
 	resolverConfig := map[string]string{}
 	untypedConf := store.untyped.UntypedLoad(store.resolverConfigName)
 	if conf, ok := untypedConf.(map[string]string); ok {
-		for key, val := range conf {
-			resolverConfig[key] = val
-		}
+		maps.Copy(resolverConfig, conf)
 	}
 	return resolverConfig
 }

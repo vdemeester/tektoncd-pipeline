@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,7 +137,7 @@ func newEntry(secret string) (*entry, error) {
 		Secret:   secret,
 		Username: username,
 		Password: password,
-		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+		Auth:     base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", username, password)),
 		Email:    "not@val.id",
 	}, nil
 }
@@ -191,9 +192,7 @@ func (*basicDockerBuilder) Write(directory string) error {
 		if err != nil {
 			return err
 		}
-		for k, v := range dockerConfigAuthMap {
-			auth[k] = v
-		}
+		maps.Copy(auth, dockerConfigAuthMap)
 	}
 
 	for _, secretName := range dockerConfig.Values {
@@ -201,13 +200,9 @@ func (*basicDockerBuilder) Write(directory string) error {
 		if err != nil {
 			return err
 		}
-		for k, v := range dockerConfigAuthMap {
-			auth[k] = v
-		}
+		maps.Copy(auth, dockerConfigAuthMap)
 	}
-	for k, v := range config.Entries {
-		auth[k] = v
-	}
+	maps.Copy(auth, config.Entries)
 	if len(auth) == 0 {
 		return nil
 	}
@@ -245,8 +240,6 @@ func authsFromDockerConfig(secret string) (map[string]entry, error) {
 	if err := json.Unmarshal(data, &c); err != nil {
 		return m, err
 	}
-	for k, v := range c.Auth {
-		m[k] = v
-	}
+	maps.Copy(m, c.Auth)
 	return m, nil
 }

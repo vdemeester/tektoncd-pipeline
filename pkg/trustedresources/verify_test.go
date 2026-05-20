@@ -543,7 +543,7 @@ func TestVerifyResource_V1Pipeline_Error(t *testing.T) {
 	}
 }
 
-func signInterface(signer signature.Signer, i interface{}) ([]byte, error) {
+func signInterface(signer signature.Signer, i any) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer is nil")
 	}

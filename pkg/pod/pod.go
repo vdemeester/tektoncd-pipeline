@@ -21,8 +21,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"math"
 	"path/filepath"
+	slices0 "slices"
 	"strconv"
 	"strings"
 	"time"
@@ -564,9 +566,7 @@ func makeLabels(s *v1.TaskRun, defaultManagedByLabelValue string) map[string]str
 	// has a managed-by label, it should override this default.
 
 	// Copy through the TaskRun's labels to the underlying Pod's.
-	for k, v := range s.ObjectMeta.Labels {
-		labels[k] = v
-	}
+	maps.Copy(labels, s.ObjectMeta.Labels)
 
 	// NB: Set this *after* passing through TaskRun Labels. If the TaskRun
 	// specifies this label, it should be overridden by this value.
@@ -720,12 +720,7 @@ func usesWindows(tr *v1.TaskRun) bool {
 }
 
 func artifactsPathReferenced(steps []v1.Step) bool {
-	for _, step := range steps {
-		if artifactPathReferencedInStep(step) {
-			return true
-		}
-	}
-	return false
+	return slices0.ContainsFunc(steps, artifactPathReferencedInStep)
 }
 
 func artifactPathReferencedInStep(step v1.Step) bool {

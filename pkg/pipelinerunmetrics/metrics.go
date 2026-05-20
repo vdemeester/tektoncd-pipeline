@@ -373,8 +373,8 @@ func (r *Recorder) updateConfig(cfg *config.Metrics) *config.Metrics {
 }
 
 // OnStore returns a function that can be passed to a configmap watcher for dynamic updates
-func OnStore(logger *zap.SugaredLogger, recorder *Recorder) func(name string, value interface{}) {
-	return func(name string, value interface{}) {
+func OnStore(logger *zap.SugaredLogger, recorder *Recorder) func(name string, value any) {
+	return func(name string, value any) {
 		if name != config.GetMetricsConfigName() {
 			return
 		}

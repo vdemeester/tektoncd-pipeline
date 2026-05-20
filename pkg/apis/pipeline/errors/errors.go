@@ -58,7 +58,7 @@ func WrapUserError(err error) error {
 // wrapped as an UserError. It indicates that the user is responsible for an error.
 // See github.com/tektoncd/pipeline/blob/main/docs/pipelineruns.md#marking-off-user-errors
 // for more details.
-func LabelUserError(messageFormat string, messageA []interface{}) string {
+func LabelUserError(messageFormat string, messageA []any) string {
 	for _, message := range messageA {
 		if ue, ok := message.(*UserError); ok {
 			return ue.Reason + messageFormat

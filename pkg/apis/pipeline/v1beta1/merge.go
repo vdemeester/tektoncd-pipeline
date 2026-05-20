@@ -124,7 +124,7 @@ func MergeSidecarsWithOverrides(sidecars []Sidecar, overrides []TaskRunSidecarOv
 
 // mergeObjWithTemplate merges obj with template and updates out to reflect the merged result.
 // template, obj, and out should point to the same type. out points to the zero value of that type.
-func mergeObjWithTemplate(template, obj, out interface{}) error {
+func mergeObjWithTemplate(template, obj, out any) error {
 	md, err := getMergeData(template, out)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func mergeObjWithTemplate(template, obj, out interface{}) error {
 // getMergeData serializes the template and empty object to get the intermediate results necessary for
 // merging an object of the same type with this template.
 // This function is provided to avoid repeatedly serializing an identical template.
-func getMergeData(template, empty interface{}) (*mergeData, error) {
+func getMergeData(template, empty any) (*mergeData, error) {
 	// We need JSON bytes to generate a patch to merge the object
 	// onto the template, so marshal the template.
 	templateJSON, err := json.Marshal(template)
@@ -159,7 +159,7 @@ func getMergeData(template, empty interface{}) (*mergeData, error) {
 // mergeObjWithTemplateBytes merges obj with md's template JSON and updates out to reflect the merged result.
 // out is a pointer to the zero value of obj's type.
 // This function is provided to avoid repeatedly serializing an identical template.
-func mergeObjWithTemplateBytes(md *mergeData, obj, out interface{}) error {
+func mergeObjWithTemplateBytes(md *mergeData, obj, out any) error {
 	// Marshal the object to JSON
 	objAsJSON, err := json.Marshal(obj)
 	if err != nil {

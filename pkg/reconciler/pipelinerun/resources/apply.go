@@ -19,6 +19,7 @@ package resources
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -600,15 +601,9 @@ func propagateParams(t v1.PipelineTask, stringReplacements map[string]string, ar
 		stringReplacementsDup := make(map[string]string)
 		arrayReplacementsDup := make(map[string][]string)
 		objectReplacementsDup := make(map[string]map[string]string)
-		for k, v := range stringReplacements {
-			stringReplacementsDup[k] = v
-		}
-		for k, v := range arrayReplacements {
-			arrayReplacementsDup[k] = v
-		}
-		for k, v := range objectReplacements {
-			objectReplacementsDup[k] = v
-		}
+		maps.Copy(stringReplacementsDup, stringReplacements)
+		maps.Copy(arrayReplacementsDup, arrayReplacements)
+		maps.Copy(objectReplacementsDup, objectReplacements)
 		for _, par := range t.Params {
 			for _, pattern := range paramPatterns {
 				checkName := fmt.Sprintf(pattern, par.Name)

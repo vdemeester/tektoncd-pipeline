@@ -44,7 +44,7 @@ type VerificationPolicy struct {
 type VerificationPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 	Items           []VerificationPolicy `json:"items"`
 }
 

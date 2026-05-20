@@ -18,6 +18,7 @@ package cache
 
 import (
 	"context"
+	"maps"
 	"os"
 	"strconv"
 	"sync"
@@ -76,9 +77,7 @@ func (store *CacheConfigStore) GetResolverConfig() map[string]string {
 	resolverConfig := map[string]string{}
 	untypedConf := store.untyped.UntypedLoad(store.cacheConfigName)
 	if conf, ok := untypedConf.(map[string]string); ok {
-		for key, val := range conf {
-			resolverConfig[key] = val
-		}
+		maps.Copy(resolverConfig, conf)
 	}
 	return resolverConfig
 }

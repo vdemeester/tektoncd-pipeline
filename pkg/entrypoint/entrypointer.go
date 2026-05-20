@@ -408,7 +408,7 @@ func (e Entrypointer) allowExec() (bool, error) {
 			return false, err
 		}
 		// Evaluate the CEL expression
-		out, _, err := prg.Eval(map[string]interface{}{})
+		out, _, err := prg.Eval(map[string]any{})
 		if err != nil {
 			return false, err
 		}

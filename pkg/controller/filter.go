@@ -36,8 +36,8 @@ import (
 //	  FilterFunc: FilterCustomRunRef("example.dev/v0", "Example"),
 //	  Handler:    controller.HandleAll(impl.Enqueue),
 //	})
-func FilterCustomRunRef(apiVersion, kind string) func(interface{}) bool {
-	return func(obj interface{}) bool {
+func FilterCustomRunRef(apiVersion, kind string) func(any) bool {
+	return func(obj any) bool {
 		r, ok := obj.(*v1beta1.CustomRun)
 		if !ok {
 			// Somehow got informed of a non-CustomRun object.
@@ -69,8 +69,8 @@ func FilterCustomRunRef(apiVersion, kind string) func(interface{}) bool {
 //	  FilterFunc: FilterOwnerCustomRunRef("example.dev/v0", "Example"),
 //	  Handler:    controller.HandleAll(impl.Enqueue),
 //	})
-func FilterOwnerCustomRunRef(customRunLister listersbeta.CustomRunLister, apiVersion, kind string) func(interface{}) bool {
-	return func(obj interface{}) bool {
+func FilterOwnerCustomRunRef(customRunLister listersbeta.CustomRunLister, apiVersion, kind string) func(any) bool {
+	return func(obj any) bool {
 		object, ok := obj.(metav1.Object)
 		if !ok {
 			return false

@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/tektoncd/pipeline/pkg/internal/resultref"
@@ -83,12 +84,7 @@ func NewResultRefs(expressions []string) []*ResultRef {
 // This is useful if we want to make sure the param looks like a ResultReference before
 // performing strict validation
 func LooksLikeContainsResultRefs(expressions []string) bool {
-	for _, expression := range expressions {
-		if resultref.LooksLikeResultRef(expression) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(expressions, resultref.LooksLikeResultRef)
 }
 
 // GetVarSubstitutionExpressionsForParam extracts all the value between "$(" and ")"" for a parameter

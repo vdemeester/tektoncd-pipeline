@@ -201,8 +201,8 @@ func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 	}
 	if defaultForbiddenEnvString, ok := cfgMap[defaultForbiddenEnv]; ok {
 		tmpString := sets.NewString()
-		fEnvs := strings.Split(defaultForbiddenEnvString, ",")
-		for _, fEnv := range fEnvs {
+		fEnvs := strings.SplitSeq(defaultForbiddenEnvString, ",")
+		for fEnv := range fEnvs {
 			tmpString.Insert(strings.TrimSpace(fEnv))
 		}
 		tc.DefaultForbiddenEnv = tmpString.List()
@@ -255,7 +255,7 @@ func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 	return &tc, nil
 }
 
-func yamlUnmarshal(s string, key string, o interface{}) error {
+func yamlUnmarshal(s string, key string, o any) error {
 	b := []byte(s)
 	if err := yaml.UnmarshalStrict(b, o); err != nil {
 		log.Printf("warning: failed to decode %q: %q. Trying decode with non-strict mode", key, err)

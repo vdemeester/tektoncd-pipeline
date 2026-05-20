@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"testing"
 
 	"knative.dev/pkg/ptr"
@@ -346,9 +347,7 @@ func TestCreateOrUpdateAffinityAssistantsAndPVCsPerPipelineRun(t *testing.T) {
 				"coschedule": "pipelineruns",
 			}
 
-			for k, v := range tc.featureFlags {
-				featureFlags[k] = v
-			}
+			maps.Copy(featureFlags, tc.featureFlags)
 
 			kubeClientSet := fakek8s.NewSimpleClientset()
 			ctx := cfgtesting.SetFeatureFlags(t.Context(), t, featureFlags)

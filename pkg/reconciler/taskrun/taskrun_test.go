@@ -7552,7 +7552,7 @@ func getSignedV1Task(unsigned *v1.Task, signer signature.Signer, name string) (*
 	return signed, nil
 }
 
-func signInterface(signer signature.Signer, i interface{}) ([]byte, error) {
+func signInterface(signer signature.Signer, i any) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer is nil")
 	}

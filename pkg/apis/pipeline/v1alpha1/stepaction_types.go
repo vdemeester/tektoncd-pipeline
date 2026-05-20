@@ -68,7 +68,7 @@ func (*StepAction) GetGroupVersionKind() schema.GroupVersionKind {
 type StepActionList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 	Items           []StepAction `json:"items"`
 }
 

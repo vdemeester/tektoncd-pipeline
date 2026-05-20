@@ -72,11 +72,9 @@ func New(tb testing.TB) *WorkloadAPI {
 	server := grpc.NewServer()
 	workload.RegisterSpiffeWorkloadAPIServer(server, &workloadAPIWrapper{w: w})
 
-	w.wg.Add(1)
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 		_ = server.Serve(listener)
-	}()
+	})
 
 	w.addr = getTargetName(listener.Addr())
 	tb.Logf("WorkloadAPI address: %s", w.addr)
@@ -418,7 +416,7 @@ func checkMetadata(ctx context.Context, key, value string) error {
 	return nil
 }
 
-func structFromValues(values map[string]interface{}) (*structpb.Struct, error) {
+func structFromValues(values map[string]any) (*structpb.Struct, error) {
 	valuesJSON, err := json.Marshal(values)
 	if err != nil {
 		return nil, err

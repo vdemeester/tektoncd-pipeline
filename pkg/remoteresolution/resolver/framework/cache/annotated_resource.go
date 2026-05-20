@@ -17,6 +17,8 @@ limitations under the License.
 package cache
 
 import (
+	"maps"
+
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	resolutionframework "github.com/tektoncd/pipeline/pkg/resolution/resolver/framework"
 )
@@ -55,9 +57,7 @@ func newAnnotatedResource(
 	existingAnnotations := resource.Annotations()
 	annotations := make(map[string]string)
 
-	for k, v := range existingAnnotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, existingAnnotations)
 
 	annotations[cacheAnnotationKey] = cacheValueTrue
 	annotations[cacheTimestampKey] = timestamp

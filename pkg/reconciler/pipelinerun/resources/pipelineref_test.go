@@ -1381,7 +1381,7 @@ func getSignedV1Pipeline(unsigned *v1.Pipeline, signer signature.Signer, name st
 	return signed, nil
 }
 
-func signInterface(signer signature.Signer, i interface{}) ([]byte, error) {
+func signInterface(signer signature.Signer, i any) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer is nil")
 	}

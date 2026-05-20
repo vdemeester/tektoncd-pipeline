@@ -270,7 +270,7 @@ func GenerateKeys(c elliptic.Curve, hashFunc crypto.Hash) (signature.SignerVerif
 }
 
 // signInterface returns the encoded signature for the given object.
-func signInterface(signer signature.Signer, i interface{}) ([]byte, error) {
+func signInterface(signer signature.Signer, i any) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer is nil")
 	}

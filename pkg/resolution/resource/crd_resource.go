@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/apis/resolution/v1beta1"
@@ -154,9 +155,7 @@ func (r ReadOnlyResolutionRequest) Annotations() map[string]string {
 	status := r.req.GetStatus()
 	if status != nil && status.Annotations != nil {
 		annotationsCopy := map[string]string{}
-		for key, val := range status.Annotations {
-			annotationsCopy[key] = val
-		}
+		maps.Copy(annotationsCopy, status.Annotations)
 		return annotationsCopy
 	}
 	return nil
