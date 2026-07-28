@@ -660,9 +660,8 @@ func TestResolveWithCacheHit(t *testing.T) {
 	if annotations["resolution.tekton.dev/cache-resolver-type"] != "cluster" {
 		t.Error("Expected resolver type to be cluster")
 	}
-	if annotations["resolution.tekton.dev/cache-operation"] != "retrieve" {
-		t.Errorf("Expected cache operation to be 'retrieve', got: %v", annotations["resolution.tekton.dev/cache-operation"])
-	}
+	// Volatile annotations (cache-operation, cache-timestamp) are intentionally
+	// not set to prevent reconcile storms when written to RR status.
 
 	// Verify the returned data matches the cached resource
 	if string(result.Data()) != string(mockResource.Data()) {

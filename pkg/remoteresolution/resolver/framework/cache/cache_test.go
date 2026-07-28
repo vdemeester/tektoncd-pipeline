@@ -18,6 +18,7 @@ package cache
 
 import (
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -156,30 +157,35 @@ func TestCacheTTLExpiration(t *testing.T) {
 	// WHEN
 	cache := newResolverCacheWithClock(100, ttl, &fc).withLogger(zaptest.NewLogger(t).Sugar())
 	defer cache.Clear()
-	resource, err := cache.GetCachedOrResolveFromRemote(t.Context(), params, resolverType, resolveFn)
+	var callCount atomic.Int32
+	countingResolveFn := func() (resolutionframework.ResolvedResource, error) {
+		callCount.Add(1)
+		return resolveFn()
+	}
+
+	resource, err := cache.GetCachedOrResolveFromRemote(t.Context(), params, resolverType, countingResolveFn)
 
 	// THEN
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
-
-	if resource.Annotations()[cacheOperationKey] != cacheOperationStore {
-		t.Fatalf("expected cache miss and cache operation 'store', got %s", resource.Annotations()[cacheOperationKey])
+	if resource == nil {
+		t.Fatal("expected resource, got nil")
+	}
+	if callCount.Load() != 1 {
+		t.Fatalf("expected resolve to be called once (cache miss), got %d", callCount.Load())
 	}
 
-	// WHEN
+	// WHEN: advance past TTL
 	fc.Advance(ttl + time.Second)
-	resource, err = cache.GetCachedOrResolveFromRemote(t.Context(), params, resolverType, resolveFn)
+	resource, err = cache.GetCachedOrResolveFromRemote(t.Context(), params, resolverType, countingResolveFn)
 
-	// THEN: Verify entry is no longer in cache after TTL expiration
+	// THEN: entry expired, resolve called again
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
-
-	// cacheOperationStore proves this is a fresh resolution, not a cache hit
-	// (a cache hit would produce cacheOperationRetrieve instead)
-	if resource.Annotations()[cacheOperationKey] != cacheOperationStore {
-		t.Fatalf("expected cache miss and cache operation 'store', got %s", resource.Annotations()[cacheOperationKey])
+	if callCount.Load() != 2 {
+		t.Fatalf("expected resolve to be called again after TTL expiry, got %d calls", callCount.Load())
 	}
 }
 
@@ -203,18 +209,27 @@ func TestCacheSpecificTTLOverride(t *testing.T) {
 		"ttl": "2m",
 	})
 
+	var callCount atomic.Int32
+	countingResolveFn := func() (resolutionframework.ResolvedResource, error) {
+		callCount.Add(1)
+		return resolveFn()
+	}
+
 	// WHEN: resolve (populates cache with resolver-specific TTL)
-	cache.GetCachedOrResolveFromRemote(ctx, params, resolverType, resolveFn)
+	cache.GetCachedOrResolveFromRemote(ctx, params, resolverType, countingResolveFn)
+	if callCount.Load() != 1 {
+		t.Fatalf("expected 1 call, got %d", callCount.Load())
+	}
 
 	// Advance past per-resolver TTL but within global TTL
 	fc.Advance(resolverSpecificTTL + time.Second)
 
 	// THEN: entry should be expired (per-resolver TTL was used, not global)
-	resource, err := cache.GetCachedOrResolveFromRemote(ctx, params, resolverType, resolveFn)
+	_, err := cache.GetCachedOrResolveFromRemote(ctx, params, resolverType, countingResolveFn)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if resource.Annotations()[cacheOperationKey] != cacheOperationStore {
+	if callCount.Load() != 2 {
 		t.Fatal("Expected cache miss after per-resolver TTL expiration — entry should have expired at 2m, not the global 10m")
 	}
 }
@@ -319,7 +334,9 @@ func TestGetCachedOrResolveFromRemote(t *testing.T) {
 
 	t.Run("cache miss and resolution success stores then retrieves", func(t *testing.T) {
 		// GIVEN
+		var callCount atomic.Int32
 		resolveFn := func() (resolutionframework.ResolvedResource, error) {
+			callCount.Add(1)
 			return &mockResolvedResource{data: []byte("test data")}, nil
 		}
 		cache := newResolverCache(100, 1*time.Hour)
@@ -344,19 +361,28 @@ func TestGetCachedOrResolveFromRemote(t *testing.T) {
 		if cachePopulationErr != nil {
 			t.Fatalf("unexpected error: %v", cachePopulationErr)
 		}
-
-		actualCachePopulationOperation := cachePopulationResult.Annotations()[cacheOperationKey]
-		if actualCachePopulationOperation != cacheOperationStore {
-			t.Fatalf("expected %s, got %s", cacheOperationStore, actualCachePopulationOperation)
+		if cachePopulationResult == nil {
+			t.Fatal("expected resource on cache population")
 		}
 
 		if cacheHitErr != nil {
 			t.Fatalf("unexpected error: %v", cacheHitErr)
 		}
+		if cacheHitResult == nil {
+			t.Fatal("expected resource on cache hit")
+		}
 
-		actualCacheHitOperation := cacheHitResult.Annotations()[cacheOperationKey]
-		if actualCacheHitOperation != cacheOperationRetrieve {
-			t.Fatalf("expected %s, got %s", cacheOperationRetrieve, actualCacheHitOperation)
+		// Resolve function should only be called once (cache miss); second call is a cache hit
+		if callCount.Load() != 1 {
+			t.Fatalf("expected resolve to be called once, got %d", callCount.Load())
+		}
+
+		// Both results should have the same idempotent annotations
+		if cachePopulationResult.Annotations()[cacheAnnotationKey] != cacheValueTrue {
+			t.Errorf("expected cache annotation on population result")
+		}
+		if cacheHitResult.Annotations()[cacheAnnotationKey] != cacheValueTrue {
+			t.Errorf("expected cache annotation on hit result")
 		}
 	})
 
@@ -407,9 +433,8 @@ func TestGetCachedOrResolveFromRemote(t *testing.T) {
 			t.Fatal("expected resolved resource on retry, got nil")
 		}
 
-		actualRetryOperation := retryResult.Annotations()[cacheOperationKey]
-		if actualRetryOperation != cacheOperationStore {
-			t.Fatalf("expected cache operation %s on retry, got %s", cacheOperationStore, actualRetryOperation)
+		if retryResult.Annotations()[cacheAnnotationKey] != cacheValueTrue {
+			t.Fatal("expected cache annotation on retry result")
 		}
 	})
 

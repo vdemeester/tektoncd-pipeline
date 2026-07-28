@@ -24,18 +24,10 @@ import (
 const (
 	// cacheAnnotationKey is the annotation key indicating if a resource was cached
 	cacheAnnotationKey = "resolution.tekton.dev/cached"
-	// cacheTimestampKey is the annotation key for when the resource was cached
-	cacheTimestampKey = "resolution.tekton.dev/cache-timestamp"
 	// cacheResolverTypeKey is the annotation key for the resolver type that cached it
 	cacheResolverTypeKey = "resolution.tekton.dev/cache-resolver-type"
-	// cacheOperationKey is the annotation key for the cache operation type
-	cacheOperationKey = "resolution.tekton.dev/cache-operation"
 	// cacheValueTrue is the value used for cache annotations
 	cacheValueTrue = "true"
-	// cacheOperationStore is the value for cache store operations
-	cacheOperationStore = "store"
-	// cacheOperationRetrieve is the value for cache retrieve operations
-	cacheOperationRetrieve = "retrieve"
 )
 
 // annotatedResource wraps a ResolvedResource with cache annotations
@@ -46,9 +38,7 @@ type annotatedResource struct {
 
 func newAnnotatedResource(
 	resource resolutionframework.ResolvedResource,
-	resolverType,
-	operation string,
-	timestamp string,
+	resolverType string,
 ) *annotatedResource {
 	// Create a new map to avoid concurrent map writes when the same resource
 	// is being annotated from multiple goroutines
@@ -59,10 +49,14 @@ func newAnnotatedResource(
 		annotations[k] = v
 	}
 
+	// Only set idempotent annotations. Volatile fields like timestamp and
+	// operation must NOT be written here because these annotations flow
+	// into the ResolutionRequest status via writeResolvedData. If the
+	// annotations change on every cache hit, each PATCH produces a new
+	// resourceVersion, which generates a watch event, which re-enqueues
+	// the ResolutionRequest, causing a reconcile storm under load.
 	annotations[cacheAnnotationKey] = cacheValueTrue
-	annotations[cacheTimestampKey] = timestamp
 	annotations[cacheResolverTypeKey] = resolverType
-	annotations[cacheOperationKey] = operation
 
 	return &annotatedResource{
 		resource:    resource,

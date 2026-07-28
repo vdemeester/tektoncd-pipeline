@@ -238,6 +238,15 @@ func (r *Reconciler) MarkFailed(ctx context.Context, rr *v1beta1.ResolutionReque
 
 func (r *Reconciler) writeResolvedData(ctx context.Context, rr *v1beta1.ResolutionRequest, resource framework.ResolvedResource) error {
 	encodedData := base64.StdEncoding.Strict().EncodeToString(resource.Data())
+
+	// If the lister copy already has data, skip the PATCH. This prevents a
+	// reconcile storm when caching is enabled: cache hits return instantly
+	// and would otherwise PATCH the same data repeatedly, each PATCH
+	// generating a new watch event that re-enqueues the ResolutionRequest.
+	if rr.Status.Data != "" {
+		return nil
+	}
+
 	patchBytes, err := json.Marshal(map[string]statusDataPatch{
 		"status": {
 			Data:        encodedData,

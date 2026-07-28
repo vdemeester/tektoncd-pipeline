@@ -18,7 +18,6 @@ package cache
 
 import (
 	"testing"
-	"time"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
@@ -49,11 +48,10 @@ func TestNewAnnotatedResource(t *testing.T) {
 		annotations: map[string]string{"existing-key": "existing-value"},
 		refSource:   &v1.RefSource{URI: "test-uri"},
 	}
-	expectedTimestamp := time.Date(2025, 1, 15, 10, 30, 0, 0, time.UTC).Format(time.RFC3339)
 	resolverType := "bundles"
 
 	// WHEN
-	annotated := newAnnotatedResource(mockResource, resolverType, cacheOperationStore, expectedTimestamp)
+	annotated := newAnnotatedResource(mockResource, resolverType)
 
 	// THEN
 	if string(annotated.Data()) != "test data" {
@@ -69,16 +67,13 @@ func TestNewAnnotatedResource(t *testing.T) {
 		t.Errorf("Expected resolver type '%s', got '%s'", resolverType, annotations[cacheResolverTypeKey])
 	}
 
-	if annotations[cacheTimestampKey] != expectedTimestamp {
-		t.Errorf("Expected cache timestamp to be %s, got %s", expectedTimestamp, annotations[cacheTimestampKey])
+	// Volatile annotations (timestamp, operation) must NOT be set — they
+	// would cause reconcile storms when written to ResolutionRequest status.
+	if _, ok := annotations["resolution.tekton.dev/cache-timestamp"]; ok {
+		t.Error("cache-timestamp annotation must not be set on annotated resources")
 	}
-
-	if _, err := time.Parse(time.RFC3339, annotations[cacheTimestampKey]); err != nil {
-		t.Errorf("Expected valid RFC3339 timestamp, got error: %v", err)
-	}
-
-	if annotations[cacheOperationKey] != cacheOperationStore {
-		t.Errorf("Expected cache operation '%s', got '%s'", cacheOperationStore, annotations[cacheOperationKey])
+	if _, ok := annotations["resolution.tekton.dev/cache-operation"]; ok {
+		t.Error("cache-operation annotation must not be set on annotated resources")
 	}
 
 	if annotations["existing-key"] != "existing-value" {

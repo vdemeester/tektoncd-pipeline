@@ -752,7 +752,10 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1.PipelineRun, getPipel
 	case errors.Is(err, remote.ErrRequestInProgress):
 		message := fmt.Sprintf("PipelineRun %s/%s awaiting remote resource", pr.Namespace, pr.Name)
 		pr.Status.MarkRunning(v1.TaskRunReasonResolvingTaskRef, message)
-		return nil
+		// Requeue as a safety net: if the watch event for the completed
+		// ResolutionRequest is missed (e.g. under heavy load), this
+		// ensures the PipelineRun is retried rather than stuck forever.
+		return controller.NewRequeueAfter(30 * time.Second)
 	case err != nil:
 		return err
 	default:
@@ -764,7 +767,10 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1.PipelineRun, getPipel
 	case errors.Is(err, remote.ErrRequestInProgress):
 		message := fmt.Sprintf("PipelineRun %s/%s awaiting remote resource", pr.Namespace, pr.Name)
 		pr.Status.MarkRunning(v1.TaskRunReasonResolvingTaskRef, message)
-		return nil
+		// Requeue as a safety net: if the watch event for the completed
+		// ResolutionRequest is missed (e.g. under heavy load), this
+		// ensures the PipelineRun is retried rather than stuck forever.
+		return controller.NewRequeueAfter(30 * time.Second)
 	case err != nil:
 		return err
 	default:

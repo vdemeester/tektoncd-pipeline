@@ -100,7 +100,7 @@ func (c *resolverCache) GetCachedOrResolveFromRemote(
 
 		c.infow("Cache hit", "key", key)
 
-		return c.annotate(cached, resolverType, cacheOperationRetrieve), nil
+		return c.annotate(cached, resolverType), nil
 	}
 
 	// If cache miss, resolve from remote using singleflight
@@ -110,7 +110,7 @@ func (c *resolverCache) GetCachedOrResolveFromRemote(
 			return nil, err
 		}
 
-		annotated := c.annotate(resolved, resolverType, cacheOperationStore)
+		annotated := c.annotate(resolved, resolverType)
 
 		// Store annotated resource with store operation and return annotated resource
 		// to indicate it was stored in cache
@@ -134,10 +134,8 @@ func (c *resolverCache) GetCachedOrResolveFromRemote(
 	return untyped.(resolutionframework.ResolvedResource), nil
 }
 
-func (c *resolverCache) annotate(resolvedResource resolutionframework.ResolvedResource, resolverType, operation string) *annotatedResource {
-	timestamp := c.clock.Now().Format(time.RFC3339)
-	result := newAnnotatedResource(resolvedResource, resolverType, operation, timestamp)
-	return result
+func (c *resolverCache) annotate(resolvedResource resolutionframework.ResolvedResource, resolverType string) *annotatedResource {
+	return newAnnotatedResource(resolvedResource, resolverType)
 }
 
 func (c *resolverCache) infow(msg string, keysAndValues ...any) {

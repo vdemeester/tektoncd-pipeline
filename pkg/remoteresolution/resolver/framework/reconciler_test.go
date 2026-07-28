@@ -531,6 +531,93 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+// TestReconcileAlreadyResolvedSkipsPatch verifies that reconciling a
+// ResolutionRequest whose status already contains resolved data does NOT
+// issue an API server PATCH. This is the fix for the cache-induced reconcile
+// storm: when caching is enabled, cache hits return instantly and without
+// this guard every reconcile would PATCH the RR status, generating a watch
+// event that re-enqueues the RR, causing an unbounded loop.
+func TestReconcileAlreadyResolvedSkipsPatch(t *testing.T) {
+	// Create a ResolutionRequest that already has data in status
+	// (simulating a previous successful resolution).
+	rr := &v1beta1.ResolutionRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "resolution.tekton.dev/v1beta1",
+			Kind:       "ResolutionRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "rr",
+			Namespace:         "foo",
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+			Labels: map[string]string{
+				resolutioncommon.LabelKeyResolverType: resolutionframework.LabelValueFakeResolverType,
+			},
+		},
+		Spec: v1beta1.ResolutionRequestSpec{
+			Params: []pipelinev1.Param{{
+				Name:  resolutionframework.FakeParamName,
+				Value: *pipelinev1.NewStructuredValues("bar"),
+			}},
+		},
+		Status: v1beta1.ResolutionRequestStatus{
+			Status: duckv1.Status{
+				Conditions: duckv1.Conditions{{
+					Type:   apis.ConditionSucceeded,
+					Status: corev1.ConditionUnknown,
+				}},
+			},
+			ResolutionRequestStatusFields: v1beta1.ResolutionRequestStatusFields{
+				Data: base64.StdEncoding.Strict().EncodeToString(
+					[]byte(`{"apiVersion": "tekton.dev/v1", "kind": "Pipeline"}`),
+				),
+			},
+		},
+	}
+
+	d := test.Data{
+		ResolutionRequests: []*v1beta1.ResolutionRequest{rr},
+		ConfigMaps: []*corev1.ConfigMap{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "resolver-cache-config",
+				Namespace: system.Namespace(),
+			},
+			Data: map[string]string{},
+		}},
+	}
+
+	// Resolver that would fail if called — but it shouldn't be, because
+	// the RR is already resolved.
+	fakeResolver := &framework.FakeResolver{ForParam: map[string]*resolutionframework.FakeResolvedResource{
+		"bar": {ErrorWith: "resolver should not have been called"},
+	}}
+
+	ctx, _ := ttesting.SetupFakeContext(t)
+	testAssets, cancel := getResolverFrameworkController(ctx, t, d, fakeResolver, setClockOnReconciler)
+	defer cancel()
+
+	// Clear actions from setup
+	testAssets.Clients.ResolutionRequests.ClearActions()
+
+	// Reconcile multiple times — none should issue a PATCH
+	for i := 0; i < 10; i++ {
+		err := testAssets.Controller.Reconciler.Reconcile(testAssets.Ctx, getRequestName(rr))
+		if err != nil {
+			t.Fatalf("reconcile %d: unexpected error: %v", i, err)
+		}
+	}
+
+	// Count PATCH actions — there should be zero
+	var patchCount int
+	for _, action := range testAssets.Clients.ResolutionRequests.Actions() {
+		if action.GetVerb() == "patch" {
+			patchCount++
+		}
+	}
+	if patchCount > 0 {
+		t.Errorf("expected zero PATCH calls for already-resolved RR, got %d (this would cause a reconcile storm with caching)", patchCount)
+	}
+}
+
 func TestResolveGoroutineLeak(t *testing.T) {
 	const numRequests = 5
 
