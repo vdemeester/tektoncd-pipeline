@@ -1217,6 +1217,7 @@ func applyParamsContextsResultsAndWorkspaces(ctx context.Context, tracer trace.T
 
 	// Apply step Artifacts substitution
 	ts = resources.ApplyArtifacts(ts)
+	ts = resources.ApplyArtifactDeclarationPaths(ts)
 	// Apply step exitCode path substitution
 	ts = resources.ApplyStepExitCodePath(ts)
 
