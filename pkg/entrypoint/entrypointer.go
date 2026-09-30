@@ -33,7 +33,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/cel-go/cel"
+	"cel.dev/cel-go/cel"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/tektoncd/pipeline/internal/artifactref"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/types"
