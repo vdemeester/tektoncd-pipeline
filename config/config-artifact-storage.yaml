@@ -36,9 +36,10 @@ data:
     # Backend type (default: "oci").
     # backend: "oci"
 
-    # Artifacts smaller than this (in bytes) are stored inline in TaskRun
-    # status regardless of backend (default: "1024", ceiling: "2048").
-    # inline-threshold: "1024"
+    # Artifacts smaller than this (in bytes, tar.gz size) may be stored
+    # inline in the step termination message / TaskRun status instead of
+    # being uploaded to the backend (default: "512", ceiling: "1024").
+    # inline-threshold: "512"
 
     # --- OCI-specific configuration ---
 
