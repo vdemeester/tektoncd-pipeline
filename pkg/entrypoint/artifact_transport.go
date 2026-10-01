@@ -45,10 +45,11 @@ import (
 
 // ArtifactInput describes an artifact to download before step execution.
 type ArtifactInput struct {
-	Name   string `json:"name"`             // artifact name
-	URI    string `json:"uri,omitempty"`    // OCI URI (e.g., "registry:5000/artifacts/test@sha256:...")
-	Path   string `json:"path"`             // local path to extract to
-	Inline string `json:"inline,omitempty"` // base64-encoded tar.gz content (used instead of URI when set)
+	Name   string            `json:"name"`             // artifact name
+	URI    string            `json:"uri,omitempty"`    // OCI URI (e.g., "registry:5000/artifacts/test@sha256:...")
+	Path   string            `json:"path"`             // local path to extract to
+	Inline string            `json:"inline,omitempty"` // base64-encoded tar.gz content (used instead of URI when set)
+	Digest map[string]string `json:"digest,omitempty"` // content digest keyed by algorithm (e.g., "sha256": "<hex>")
 }
 
 // ArtifactOutput describes an artifact to upload after step execution.

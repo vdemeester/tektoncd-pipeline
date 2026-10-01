@@ -18,6 +18,7 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -641,10 +642,19 @@ func getTaskResultReplacements(spec *v1.TaskSpec) map[string]string {
 	return stringReplacements
 }
 
-// ApplyArtifacts replaces the occurrences of artifacts.path and step.artifacts.path with the absolute tekton internal path
-// ApplyArtifactDeclarationPaths replaces $(inputs.<name>.path) and $(outputs.<name>.path)
-// with the actual artifact paths based on TaskSpec.Artifacts declarations.
-func ApplyArtifactDeclarationPaths(spec *v1.TaskSpec) *v1.TaskSpec {
+// ApplyArtifactDeclarationPaths replaces artifact variable references with their
+// resolved values based on TaskSpec.Artifacts declarations.
+//   - $(inputs.<name>.path)   → /tekton/artifacts/inputs/<name>
+//   - $(outputs.<name>.path)  → /tekton/artifacts/outputs/<name>       (content)
+//   - $(outputs.<name>.uri)   → /tekton/artifacts/outputs/<name>.uri   (reference)
+//   - $(inputs.<name>.uri)    → resolved URI from upstream artifact output
+//   - $(inputs.<name>.digest) → resolved digest from upstream artifact output
+//
+// The resolvedInputsJSON is the serialized []ArtifactInput from the
+// "tekton.dev/artifact-inputs" TaskRun annotation, populated by the
+// PipelineRun reconciler when wiring artifact bindings. It may be empty
+// for standalone TaskRuns or tasks without artifact input bindings.
+func ApplyArtifactDeclarationPaths(spec *v1.TaskSpec, resolvedInputsJSON string) *v1.TaskSpec {
 	if spec.Artifacts == nil {
 		return spec
 	}
@@ -658,6 +668,25 @@ func ApplyArtifactDeclarationPaths(spec *v1.TaskSpec) *v1.TaskSpec {
 			stringReplacements[fmt.Sprintf("outputs.%s.uri", output.Name)] = filepath.Join(pipeline.ArtifactsDir, "outputs", output.Name+".uri")
 		} else {
 			stringReplacements[fmt.Sprintf("outputs.%s.path", output.Name)] = filepath.Join(pipeline.ArtifactsDir, "outputs", output.Name)
+		}
+	}
+
+	if resolvedInputsJSON != "" {
+		type artifactInput struct {
+			Name   string            `json:"name"`
+			URI    string            `json:"uri,omitempty"`
+			Digest map[string]string `json:"digest,omitempty"`
+		}
+		var inputs []artifactInput
+		if err := json.Unmarshal([]byte(resolvedInputsJSON), &inputs); err == nil {
+			for _, input := range inputs {
+				if input.URI != "" {
+					stringReplacements[fmt.Sprintf("inputs.%s.uri", input.Name)] = input.URI
+				}
+				if sha, ok := input.Digest["sha256"]; ok {
+					stringReplacements[fmt.Sprintf("inputs.%s.digest", input.Name)] = "sha256:" + sha
+				}
+			}
 		}
 	}
 

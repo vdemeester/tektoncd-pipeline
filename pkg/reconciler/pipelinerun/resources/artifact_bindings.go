@@ -78,6 +78,12 @@ func ResolveArtifactInputsForTask(pt *v1.PipelineTask, taskArtifacts map[string]
 			URI:  artifactValue.Uri,
 			Path: filepath.Join(pipeline.ArtifactsDir, "inputs", binding.Name),
 		}
+		if len(artifactValue.Digest) > 0 {
+			input.Digest = make(map[string]string, len(artifactValue.Digest))
+			for algo, hash := range artifactValue.Digest {
+				input.Digest[string(algo)] = hash
+			}
+		}
 		if artifactValue.Inline != "" {
 			input.Inline = artifactValue.Inline
 		}
