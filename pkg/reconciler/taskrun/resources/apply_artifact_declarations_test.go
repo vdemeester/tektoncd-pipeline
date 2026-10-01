@@ -44,7 +44,7 @@ echo done > $(outputs.results.path)/data.json
 		}},
 	}
 
-	got := resources.ApplyArtifactDeclarationPaths(spec)
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
 
 	expectedScript := `
 cd /tekton/artifacts/inputs/source
@@ -53,6 +53,57 @@ echo done > /tekton/artifacts/outputs/results/data.json
 `
 	if got.Steps[0].Script != expectedScript {
 		t.Errorf("script mismatch:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
+
+func TestApplyArtifactDeclarationPaths_WithResolvedInputs(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Artifacts: &v1.ArtifactDeclarations{
+			Inputs: []v1.ArtifactDeclaration{
+				{Name: "image"},
+			},
+		},
+		Steps: []v1.Step{{
+			Name:  "show",
+			Image: "alpine",
+			Script: `
+echo "URI: $(inputs.image.uri)"
+echo "Digest: $(inputs.image.digest)"
+echo "Path: $(inputs.image.path)"
+`,
+		}},
+	}
+
+	resolvedJSON := `[{"name":"image","uri":"registry.example.com/app@sha256:abc123","path":"/tekton/artifacts/inputs/image","digest":{"sha256":"abc123"}}]`
+	got := resources.ApplyArtifactDeclarationPaths(spec, resolvedJSON)
+
+	expectedScript := `
+echo "URI: registry.example.com/app@sha256:abc123"
+echo "Digest: sha256:abc123"
+echo "Path: /tekton/artifacts/inputs/image"
+`
+	if got.Steps[0].Script != expectedScript {
+		t.Errorf("script mismatch:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
+
+func TestApplyArtifactDeclarationPaths_EmptyResolvedInputs(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Artifacts: &v1.ArtifactDeclarations{
+			Inputs: []v1.ArtifactDeclaration{
+				{Name: "image"},
+			},
+		},
+		Steps: []v1.Step{{
+			Name:   "show",
+			Image:  "alpine",
+			Script: `echo "$(inputs.image.uri)"`,
+		}},
+	}
+
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
+	if got.Steps[0].Script != `echo "$(inputs.image.uri)"` {
+		t.Errorf("script should not substitute uri with empty resolved inputs, got: %q", got.Steps[0].Script)
 	}
 }
 
@@ -65,7 +116,7 @@ func TestApplyArtifactDeclarationPaths_NoArtifacts(t *testing.T) {
 		}},
 	}
 
-	got := resources.ApplyArtifactDeclarationPaths(spec)
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
 	if got.Steps[0].Script != "echo hello" {
 		t.Errorf("script should not change without artifacts, got: %q", got.Steps[0].Script)
 	}
