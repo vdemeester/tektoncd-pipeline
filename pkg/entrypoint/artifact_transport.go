@@ -26,6 +26,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -126,6 +127,9 @@ func UploadArtifact(ctx context.Context, output ArtifactOutput, insecure bool, i
 			return nil, fmt.Errorf("artifact %q (%d bytes) exceeds inline threshold (%d) and no storage backend is configured",
 				output.Name, dataSize, inlineThreshold)
 		}
+		slog.Warn("Artifact storage is not enabled, content artifact will be digested but not uploaded to OCI. "+
+			"Set enabled: \"true\" in config-artifact-storage ConfigMap to enable uploads.",
+			slog.String("name", output.Name), slog.Int64("size", dataSize))
 		return &pipelinev1.ArtifactValue{
 			Digest: map[pipelinev1.Algorithm]string{"sha256": digestHex},
 			Size:   dataSize,
