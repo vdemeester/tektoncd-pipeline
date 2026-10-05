@@ -176,6 +176,64 @@ func TestNewArtifactStorageFromMap(t *testing.T) {
 	}
 }
 
+func TestReferrersEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		as   *ArtifactStorage
+		want bool
+	}{
+		{
+			name: "nil storage",
+			as:   nil,
+			want: false,
+		},
+		{
+			name: "all enabled",
+			as: &ArtifactStorage{
+				Enabled:            true,
+				OCIAttachReferrers: true,
+				OCIRepository:      "registry:5000/artifacts",
+			},
+			want: true,
+		},
+		{
+			name: "storage disabled",
+			as: &ArtifactStorage{
+				Enabled:            false,
+				OCIAttachReferrers: true,
+				OCIRepository:      "registry:5000/artifacts",
+			},
+			want: false,
+		},
+		{
+			name: "attach referrers disabled",
+			as: &ArtifactStorage{
+				Enabled:            true,
+				OCIAttachReferrers: false,
+				OCIRepository:      "registry:5000/artifacts",
+			},
+			want: false,
+		},
+		{
+			name: "empty repository",
+			as: &ArtifactStorage{
+				Enabled:            true,
+				OCIAttachReferrers: true,
+				OCIRepository:      "",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.as.ReferrersEnabled(); got != tt.want {
+				t.Errorf("ReferrersEnabled() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNewArtifactStorageFromConfigMap(t *testing.T) {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
