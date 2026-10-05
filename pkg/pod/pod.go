@@ -244,7 +244,7 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1.TaskRun, taskSpec v1.Ta
 		artifactStorageCfg := config.FromContextOrDefaults(ctx).ArtifactStorage
 		ociRepository, insecure := "", false
 		inlineThreshold := 0
-		if artifactStorageCfg != nil {
+		if artifactStorageCfg != nil && artifactStorageCfg.Enabled {
 			ociRepository = artifactStorageCfg.OCIRepository
 			insecure = artifactStorageCfg.Insecure
 			inlineThreshold = artifactStorageCfg.InlineThreshold
@@ -270,7 +270,7 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1.TaskRun, taskSpec v1.Ta
 		}
 		// Get secret for OCI credentials from the system namespace (ex: tekton-pipelines)and inject
 		// the docker config JSON as an entrypoint arg.
-		if artifactStorageCfg != nil && artifactStorageCfg.OCICredentialsSecret != "" {
+		if artifactStorageCfg != nil && artifactStorageCfg.Enabled && artifactStorageCfg.OCICredentialsSecret != "" {
 			dockerCfgJSON, err := readArtifactCredentials(ctx, b.KubeClient, artifactStorageCfg.OCICredentialsSecret)
 			if err != nil {
 				log.Printf("warning: failed to read artifact credentials secret: %v", err)
