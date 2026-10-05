@@ -88,6 +88,11 @@ type ArtifactStorage struct {
 	OCIGroupByPipelineRun bool
 }
 
+// ReferrersEnabled reports whether OCI referrer attachment should run.
+func (as *ArtifactStorage) ReferrersEnabled() bool {
+	return as != nil && as.Enabled && as.OCIAttachReferrers && as.OCIRepository != ""
+}
+
 // NewArtifactStorageFromMap creates an ArtifactStorage from a map of string values.
 func NewArtifactStorageFromMap(cfgMap map[string]string) (*ArtifactStorage, error) {
 	as := &ArtifactStorage{

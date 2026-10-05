@@ -978,7 +978,7 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1.PipelineRun, getPipel
 	case corev1.ConditionTrue:
 		pr.Status.MarkSucceeded(after.Reason, after.Message)
 		// Attach OCI referrers for artifact outputs when pipeline succeeds
-		if cfg := config.FromContextOrDefaults(ctx); cfg.FeatureFlags.EnableArtifacts && cfg.ArtifactStorage != nil && cfg.ArtifactStorage.OCIRepository != "" {
+		if cfg := config.FromContextOrDefaults(ctx); cfg.FeatureFlags.EnableArtifacts && cfg.ArtifactStorage.ReferrersEnabled() {
 			if err := c.attachArtifactReferrers(ctx, pipelineRunFacts, cfg.ArtifactStorage); err != nil {
 				logger.Warnf("Failed to attach artifact referrers for PipelineRun %s: %v", pr.Name, err)
 			}
