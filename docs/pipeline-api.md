@@ -347,6 +347,25 @@ _Appears in:_
 | `outputs` _[ArtifactDeclaration](#artifactdeclaration) array_ | Outputs declares artifacts that the task produces. |  |  |
 
 
+#### ArtifactStorageRef
+
+
+
+ArtifactStorageRef identifies where a content artifact is stored in a backend.
+
+
+
+_Appears in:_
+- [ArtifactValue](#artifactvalue)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `backend` _string_ |  |  |  |
+| `location` _string_ |  |  |  |
+| `digest` _string_ |  |  |  |
+| `contentType` _string_ |  |  |  |
+
+
 #### ArtifactType
 
 _Underlying type:_ _string_
@@ -383,6 +402,9 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `digest` _object (keys:[Algorithm](#algorithm), values:string)_ |  |  |  |
 | `uri` _string_ |  |  |  |
+| `ref` _[ArtifactStorageRef](#artifactstorageref)_ | Ref is a backend-specific storage reference. Present only for content<br />artifacts stored externally; absent for reference artifacts and inline content. |  | Optional: \{\} <br /> |
+| `size` _integer_ | content size in bytes, letting consumers and UIs know the artifact size before fetching. |  | Optional: \{\} <br /> |
+| `inline` _string_ | Inline holds small content embedded directly in the status (base64-encoded),<br />avoiding external storage overhead. |  | Optional: \{\} <br /> |
 
 
 #### Artifacts
