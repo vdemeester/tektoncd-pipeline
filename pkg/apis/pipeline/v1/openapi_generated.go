@@ -33,6 +33,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Artifact":                     schema_pkg_apis_pipeline_v1_Artifact(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactDeclaration":          schema_pkg_apis_pipeline_v1_ArtifactDeclaration(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactDeclarations":         schema_pkg_apis_pipeline_v1_ArtifactDeclarations(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactStorageRef":           schema_pkg_apis_pipeline_v1_ArtifactStorageRef(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactValue":                schema_pkg_apis_pipeline_v1_ArtifactValue(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Artifacts":                    schema_pkg_apis_pipeline_v1_Artifacts(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference":         schema_pkg_apis_pipeline_v1_ChildStatusReference(ref),
@@ -554,6 +555,47 @@ func schema_pkg_apis_pipeline_v1_ArtifactDeclarations(ref common.ReferenceCallba
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_ArtifactStorageRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ArtifactStorageRef identifies where a content artifact is stored in a backend.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"backend": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"location": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"digest": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"contentType": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"backend", "location", "digest"},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_ArtifactValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -582,9 +624,31 @@ func schema_pkg_apis_pipeline_v1_ArtifactValue(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref is a backend-specific storage reference. Present only for content artifacts stored externally; absent for reference artifacts and inline content.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactStorageRef"),
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "content size in bytes, letting consumers and UIs know the artifact size before fetching.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"inline": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Inline holds small content embedded directly in the status (base64-encoded), avoiding external storage overhead.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArtifactStorageRef"},
 	}
 }
 
