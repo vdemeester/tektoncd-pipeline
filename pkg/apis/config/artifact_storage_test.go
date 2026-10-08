@@ -158,6 +158,21 @@ func TestNewArtifactStorageFromMap(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "oci-repository set but enabled is false",
+			data: map[string]string{
+				"oci-repository": "registry:5000/artifacts",
+			},
+			wantErr: true,
+		},
+		{
+			name: "oci-repository set with enabled explicitly false",
+			data: map[string]string{
+				"enabled":        "false",
+				"oci-repository": "registry:5000/artifacts",
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
