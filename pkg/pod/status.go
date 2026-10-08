@@ -394,6 +394,8 @@ func setTaskRunStatusBasedOnStepStatus(ctx context.Context, logger *zap.SugaredL
 		trs.Steps = orderedStepStates
 	}
 
+	applyArtifactSubjectFromSpec(trs.Artifacts, ts)
+
 	return errors.Join(errs...)
 }
 
@@ -428,6 +430,30 @@ func setStepArtifactsValueFromTerminationMessageRunResult(results []result.RunRe
 		}
 	}
 	return nil
+}
+
+// applyArtifactSubjectFromSpec copies the Subject key from the TaskSpec's
+// artifact output declarations onto the corresponding status artifacts.
+// The entrypoint does not include Subject in the termination message, so the
+// reconciler must recover it from the spec.
+func applyArtifactSubjectFromSpec(artifacts *v1.Artifacts, ts *v1.TaskSpec) {
+	if artifacts == nil || ts == nil || ts.Artifacts == nil {
+		return
+	}
+	subjects := make(map[string]bool, len(ts.Artifacts.Outputs))
+	for _, decl := range ts.Artifacts.Outputs {
+		if decl.Subject {
+			subjects[decl.Name] = true
+		}
+	}
+	if len(subjects) == 0 {
+		return
+	}
+	for i := range artifacts.Outputs {
+		if subjects[artifacts.Outputs[i].Name] {
+			artifacts.Outputs[i].Subject = true
+		}
+	}
 }
 
 func setTaskRunStatusBasedOnSidecarStatus(sidecarStatuses []corev1.ContainerStatus, trs *v1.TaskRunStatus) {

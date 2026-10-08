@@ -31,6 +31,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/google/go-containerregistry/pkg/authn/k8schain"
+	k8skeychain "github.com/google/go-containerregistry/pkg/authn/kubernetes"
+	ociremote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	pipelineErrors "github.com/tektoncd/pipeline/pkg/apis/pipeline/errors"
@@ -81,6 +84,7 @@ import (
 	"knative.dev/pkg/kmeta"
 	"knative.dev/pkg/logging"
 	pkgreconciler "knative.dev/pkg/reconciler"
+	"knative.dev/pkg/system"
 )
 
 // Aliased for backwards compatibility; do not add additional reasons here
@@ -979,7 +983,7 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1.PipelineRun, getPipel
 		pr.Status.MarkSucceeded(after.Reason, after.Message)
 		// Attach OCI referrers for artifact outputs when pipeline succeeds
 		if cfg := config.FromContextOrDefaults(ctx); cfg.FeatureFlags.EnableArtifacts && cfg.ArtifactStorage.ReferrersEnabled() {
-			if err := c.attachArtifactReferrers(ctx, pipelineRunFacts, cfg.ArtifactStorage); err != nil {
+			if err := c.attachArtifactReferrers(ctx, pr, pipelineRunFacts, cfg.ArtifactStorage); err != nil {
 				logger.Warnf("Failed to attach artifact referrers for PipelineRun %s: %v", pr.Name, err)
 			}
 		}
@@ -2313,7 +2317,7 @@ func validatePipelineSpecAfterApplyParameters(ctx context.Context, pipelineSpec 
 
 // attachArtifactReferrers collects artifact outputs from completed TaskRuns
 // and attaches OCI referrers to build output artifacts.
-func (c *Reconciler) attachArtifactReferrers(ctx context.Context, facts *resources.PipelineRunFacts, storageCfg *config.ArtifactStorage) error {
+func (c *Reconciler) attachArtifactReferrers(ctx context.Context, pr *v1.PipelineRun, facts *resources.PipelineRunFacts, storageCfg *config.ArtifactStorage) error {
 	taskArtifacts := facts.State.GetTaskRunsArtifacts()
 	if len(taskArtifacts) == 0 {
 		return nil
@@ -2336,5 +2340,41 @@ func (c *Reconciler) attachArtifactReferrers(ctx context.Context, facts *resourc
 		return nil
 	}
 
-	return AttachReferrers(ctx, results, storageCfg.Insecure)
+	remoteOpts, err := c.resolveArtifactAuth(ctx, pr, storageCfg)
+	if err != nil {
+		return fmt.Errorf("resolving artifact registry credentials: %w", err)
+	}
+
+	return AttachReferrers(ctx, results, storageCfg.Insecure, remoteOpts...)
+}
+
+// resolveArtifactAuth builds credentials for OCI registry access.
+// If oci.credentialsSecret is configured, it reads that secret from the system
+// namespace. Otherwise it falls back to the ServiceAccount's imagePullSecrets
+// from the PipelineRun namespace.
+func (c *Reconciler) resolveArtifactAuth(ctx context.Context, pr *v1.PipelineRun, storageCfg *config.ArtifactStorage) ([]ociremote.Option, error) {
+	if storageCfg.OCICredentialsSecret != "" {
+		secret, err := c.KubeClientSet.CoreV1().Secrets(system.Namespace()).Get(ctx, storageCfg.OCICredentialsSecret, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("reading artifact credentials secret %s/%s: %w", system.Namespace(), storageCfg.OCICredentialsSecret, err)
+		}
+		kc, err := k8skeychain.NewFromPullSecrets(ctx, []corev1.Secret{*secret})
+		if err != nil {
+			return nil, fmt.Errorf("creating keychain from artifact credentials: %w", err)
+		}
+		return []ociremote.Option{ociremote.WithAuthFromKeychain(kc)}, nil
+	}
+
+	saName := pr.Spec.TaskRunTemplate.ServiceAccountName
+	if saName == "" {
+		saName = "default"
+	}
+	kc, err := k8schain.New(ctx, c.KubeClientSet, k8schain.Options{
+		Namespace:          pr.Namespace,
+		ServiceAccountName: saName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("resolving ServiceAccount imagePullSecrets: %w", err)
+	}
+	return []ociremote.Option{ociremote.WithAuthFromKeychain(kc)}, nil
 }
