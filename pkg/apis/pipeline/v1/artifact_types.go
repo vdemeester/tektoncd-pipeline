@@ -71,6 +71,15 @@ type ArtifactDeclaration struct {
 	Value string `json:"value,omitempty"`
 }
 
+// StepArtifacts declares the artifact outputs a Step or StepAction produces.
+// Only outputs are declared at step scope — inputs are fetched once at Task
+// scope and passed to steps as params.
+type StepArtifacts struct {
+	// Outputs declares artifacts produced by this Step or StepAction.
+	// +listType=atomic
+	Outputs []ArtifactDeclaration `json:"outputs,omitempty"`
+}
+
 // PipelineTaskArtifacts configures artifact bindings for a PipelineTask.
 type PipelineTaskArtifacts struct {
 	// Inputs binds artifact inputs from other tasks' outputs.
