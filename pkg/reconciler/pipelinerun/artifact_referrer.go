@@ -91,27 +91,22 @@ func AttachReferrers(ctx context.Context, artifacts []TaskArtifactResult, insecu
 			artifactType = "application/vnd.tekton.artifact.v1"
 		}
 
-		// Create an empty image with the subject set
+		// Create an empty OCI manifest with annotations and subject.
+		// Subject must be applied last because each mutate wrapper
+		// overwrites manifest.Subject with its own field in compute().
 		img := empty.Image
-
-		// Set the artifact type via annotations and config
 		img = mutate.MediaType(img, types.OCIManifestSchema1)
-
-		subjectWithRef := mutate.Subject(img, v1oci.Descriptor{
-			MediaType: subjectDesc.MediaType,
-			Size:      subjectDesc.Size,
-			Digest:    subjectDesc.Digest,
-		})
-
-		annotated := mutate.Annotations(subjectWithRef, map[string]string{
+		img = mutate.Annotations(img, map[string]string{
 			"org.opencontainers.image.artifact.type": artifactType,
 			"tekton.dev/artifact.name":               ref.Artifact.Name,
 			"tekton.dev/artifact.task":               ref.TaskName,
 			"tekton.dev/artifact.uri":                ref.Artifact.Values[0].Uri,
-		})
-
-		// Cast back to Image for remote.Write
-		img, _ = annotated.(v1oci.Image)
+		}).(v1oci.Image)
+		img = mutate.Subject(img, v1oci.Descriptor{
+			MediaType: subjectDesc.MediaType,
+			Size:      subjectDesc.Size,
+			Digest:    subjectDesc.Digest,
+		}).(v1oci.Image)
 
 		// Push the referrer manifest to the subject's repository
 		digest, err := img.Digest()
