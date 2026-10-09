@@ -35,6 +35,18 @@ func contextWithArtifactsEnabled(enabled bool) context.Context {
 		FeatureFlags: &config.FeatureFlags{
 			EnableArtifacts: enabled,
 		},
+		ArtifactStorage: &config.ArtifactStorage{},
+	}
+	return config.ToContext(context.Background(), cfg)
+}
+
+// contextWithArtifactStorage returns a context with enable-artifacts true and the given storage config.
+func contextWithArtifactStorage(as *config.ArtifactStorage) context.Context {
+	cfg := &config.Config{
+		FeatureFlags: &config.FeatureFlags{
+			EnableArtifacts: true,
+		},
+		ArtifactStorage: as,
 	}
 	return config.ToContext(context.Background(), cfg)
 }
@@ -265,6 +277,43 @@ func TestValidateArtifactDeclarations_Nil(t *testing.T) {
 	}
 }
 
+func TestValidateArtifactDeclarations_OCIRepositoryWithoutEnabled(t *testing.T) {
+	ctx := contextWithArtifactStorage(&config.ArtifactStorage{
+		Enabled:       false,
+		OCIRepository: "registry:5000/artifacts",
+	})
+	decls := &ArtifactDeclarations{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference},
+		},
+	}
+
+	errs := ValidateArtifactDeclarations(ctx, decls)
+	if errs == nil {
+		t.Fatal("expected error when oci-repository is set but enabled is false")
+	}
+	want := `artifact storage config is invalid: oci-repository is set to "registry:5000/artifacts" but enabled is false; set enabled to true to activate artifact storage: `
+	if errs.Error() != want {
+		t.Errorf("expected error message %q, got %q", want, errs.Error())
+	}
+}
+
+func TestValidateArtifactDeclarations_OCIRepositoryWithEnabled(t *testing.T) {
+	ctx := contextWithArtifactStorage(&config.ArtifactStorage{
+		Enabled:       true,
+		OCIRepository: "registry:5000/artifacts",
+	})
+	decls := &ArtifactDeclarations{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference},
+		},
+	}
+
+	if errs := ValidateArtifactDeclarations(ctx, decls); errs != nil {
+		t.Errorf("expected no errors, got: %v", errs)
+	}
+}
+
 func TestValidatePipelineTaskArtifactBindings_Valid(t *testing.T) {
 	bindings := &PipelineTaskArtifacts{
 		Inputs: []PipelineTaskArtifactBinding{
@@ -272,8 +321,25 @@ func TestValidatePipelineTaskArtifactBindings_Valid(t *testing.T) {
 		},
 	}
 
-	if errs := ValidatePipelineTaskArtifactBindings(bindings); errs != nil {
+	if errs := ValidatePipelineTaskArtifactBindings(artifactsEnabledCtx(), bindings); errs != nil {
 		t.Errorf("expected no errors, got: %v", errs)
+	}
+}
+
+func TestValidatePipelineTaskArtifactBindings_OCIRepositoryWithoutEnabled(t *testing.T) {
+	ctx := contextWithArtifactStorage(&config.ArtifactStorage{
+		Enabled:       false,
+		OCIRepository: "registry:5000/artifacts",
+	})
+	bindings := &PipelineTaskArtifacts{
+		Inputs: []PipelineTaskArtifactBinding{
+			{Name: "source", From: "tasks.build.outputs.image"},
+		},
+	}
+
+	errs := ValidatePipelineTaskArtifactBindings(ctx, bindings)
+	if errs == nil {
+		t.Fatal("expected error when oci-repository is set but enabled is false")
 	}
 }
 
@@ -284,7 +350,7 @@ func TestValidatePipelineTaskArtifactBindings_InvalidFromFormat(t *testing.T) {
 		},
 	}
 
-	errs := ValidatePipelineTaskArtifactBindings(bindings)
+	errs := ValidatePipelineTaskArtifactBindings(artifactsEnabledCtx(), bindings)
 	if errs == nil {
 		t.Error("expected error for invalid from format")
 	}
@@ -297,7 +363,7 @@ func TestValidatePipelineTaskArtifactBindings_EmptyName(t *testing.T) {
 		},
 	}
 
-	errs := ValidatePipelineTaskArtifactBindings(bindings)
+	errs := ValidatePipelineTaskArtifactBindings(artifactsEnabledCtx(), bindings)
 	if errs == nil {
 		t.Error("expected error for empty binding name")
 	}
@@ -310,7 +376,7 @@ func TestValidatePipelineTaskArtifactBindings_EmptyFrom(t *testing.T) {
 		},
 	}
 
-	errs := ValidatePipelineTaskArtifactBindings(bindings)
+	errs := ValidatePipelineTaskArtifactBindings(artifactsEnabledCtx(), bindings)
 	if errs == nil {
 		t.Error("expected error for empty from")
 	}
@@ -334,6 +400,23 @@ func TestValidateStepArtifacts_Valid(t *testing.T) {
 	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
 	if errs != nil {
 		t.Errorf("expected no error, got: %v", errs)
+	}
+}
+
+func TestValidateStepArtifacts_OCIRepositoryWithoutEnabled(t *testing.T) {
+	ctx := contextWithArtifactStorage(&config.ArtifactStorage{
+		Enabled:       false,
+		OCIRepository: "registry:5000/artifacts",
+	})
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "logs", Type: ArtifactTypeContent},
+		},
+	}
+
+	errs := ValidateStepArtifacts(ctx, arts)
+	if errs == nil {
+		t.Fatal("expected error when oci-repository is set but enabled is false")
 	}
 }
 

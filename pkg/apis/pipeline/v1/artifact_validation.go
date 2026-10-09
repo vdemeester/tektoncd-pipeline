@@ -29,6 +29,21 @@ import (
 // stepArtifactValuePattern matches $(steps.<step>.artifacts.<name>)
 var stepArtifactValuePattern = regexp.MustCompile(`^\$\(steps\.([^.]+)\.artifacts\.([^.)]+)\)$`)
 
+// validateArtifactStorageConfig rejects a misconfigured config-artifact-storage
+// where oci-repository is set but enabled is false. Checked at Task/Pipeline
+// admission when artifacts are used, so the ConfigMap can still be loaded.
+func validateArtifactStorageConfig(ctx context.Context) *apis.FieldError {
+	cfg := config.FromContextOrDefaults(ctx)
+	if cfg == nil || cfg.ArtifactStorage == nil {
+		return nil
+	}
+	as := cfg.ArtifactStorage
+	if as.OCIRepository != "" && !as.Enabled {
+		return apis.ErrGeneric(fmt.Sprintf("artifact storage config is invalid: oci-repository is set to %q but enabled is false; set enabled to true to activate artifact storage", as.OCIRepository), "")
+	}
+	return nil
+}
+
 // ValidateArtifactDeclarations validates artifact declarations on a TaskSpec.
 func ValidateArtifactDeclarations(ctx context.Context, decls *ArtifactDeclarations) *apis.FieldError {
 	if decls == nil {
@@ -40,6 +55,9 @@ func ValidateArtifactDeclarations(ctx context.Context, decls *ArtifactDeclaratio
 	cfg := config.FromContextOrDefaults(ctx)
 	if cfg == nil || cfg.FeatureFlags == nil || !cfg.FeatureFlags.EnableArtifacts {
 		return errs.Also(apis.ErrGeneric(fmt.Sprintf("feature flag %s should be set to true to use artifacts feature", config.EnableArtifacts), ""))
+	}
+	if err := validateArtifactStorageConfig(ctx); err != nil {
+		return errs.Also(err)
 	}
 
 	// Validate inputs
@@ -113,6 +131,9 @@ func ValidateStepArtifacts(ctx context.Context, artifacts *StepArtifacts) *apis.
 	if cfg == nil || cfg.FeatureFlags == nil || !cfg.FeatureFlags.EnableArtifacts {
 		return apis.ErrGeneric(fmt.Sprintf("feature flag %s should be set to true to use artifacts feature", config.EnableArtifacts), "")
 	}
+	if err := validateArtifactStorageConfig(ctx); err != nil {
+		return err
+	}
 
 	var errs *apis.FieldError
 	outputNames := map[string]bool{}
@@ -150,12 +171,13 @@ func ValidateStepArtifacts(ctx context.Context, artifacts *StepArtifacts) *apis.
 }
 
 // ValidatePipelineTaskArtifactBindings validates artifact bindings on a PipelineTask.
-func ValidatePipelineTaskArtifactBindings(bindings *PipelineTaskArtifacts) *apis.FieldError {
+func ValidatePipelineTaskArtifactBindings(ctx context.Context, bindings *PipelineTaskArtifacts) *apis.FieldError {
 	if bindings == nil {
 		return nil
 	}
 
 	var errs *apis.FieldError
+	errs = errs.Also(validateArtifactStorageConfig(ctx))
 	for i, binding := range bindings.Inputs {
 		if binding.Name == "" {
 			errs = errs.Also(apis.ErrMissingField(fmt.Sprintf("inputs[%d].name", i)))
