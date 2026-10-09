@@ -232,6 +232,9 @@ func (l StepList) Validate(ctx context.Context) (errs *apis.FieldError) {
 			errs = errs.Also(ValidateStepResultsVariables(ctx, s.Results, s.Script).ViaIndex(idx))
 			errs = errs.Also(ValidateStepResults(ctx, s.Results).ViaIndex(idx).ViaField("results"))
 		}
+		if s.Artifacts != nil {
+			errs = errs.Also(ValidateStepArtifacts(ctx, s.Artifacts).ViaIndex(idx).ViaField("artifacts"))
+		}
 		if len(s.When) > 0 {
 			errs = errs.Also(s.When.validate(ctx).ViaIndex(idx))
 		}

@@ -315,3 +315,98 @@ func TestValidatePipelineTaskArtifactBindings_EmptyFrom(t *testing.T) {
 		t.Error("expected error for empty from")
 	}
 }
+
+func TestValidateStepArtifacts_Nil(t *testing.T) {
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), nil)
+	if errs != nil {
+
+		t.Errorf("expected no error for nil, got: %v", errs)
+	}
+}
+
+func TestValidateStepArtifacts_Valid(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference},
+			{Name: "logs", Type: ArtifactTypeContent},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs != nil {
+		t.Errorf("expected no error, got: %v", errs)
+	}
+}
+
+func TestValidateStepArtifacts_FeatureFlagDisabled(t *testing.T) {
+	ctx := contextWithArtifactsEnabled(false)
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference},
+		},
+	}
+	errs := ValidateStepArtifacts(ctx, arts)
+	if errs == nil {
+		t.Error("expected error when feature flag disabled")
+	}
+}
+
+func TestValidateStepArtifacts_DuplicateNames(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference},
+			{Name: "image", Type: ArtifactTypeContent},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs == nil {
+		t.Error("expected error for duplicate names")
+	}
+}
+
+func TestValidateStepArtifacts_InvalidType(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: "invalid"},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs == nil {
+		t.Error("expected error for invalid type")
+	}
+}
+
+func TestValidateStepArtifacts_EmptyName(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "", Type: ArtifactTypeContent},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs == nil {
+		t.Error("expected error for empty name")
+	}
+}
+
+func TestValidateStepArtifacts_SubjectRejected(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference, Subject: true},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs == nil {
+		t.Error("expected error: subject not allowed on step-scoped artifacts")
+	}
+}
+
+func TestValidateStepArtifacts_ValueRejected(t *testing.T) {
+	arts := &StepArtifacts{
+		Outputs: []ArtifactDeclaration{
+			{Name: "image", Type: ArtifactTypeReference, Value: "$(steps.build.artifacts.image)"},
+		},
+	}
+	errs := ValidateStepArtifacts(artifactsEnabledCtx(), arts)
+	if errs == nil {
+		t.Error("expected error: value not allowed on step-scoped artifacts")
+	}
+}

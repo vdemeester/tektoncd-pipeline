@@ -103,6 +103,52 @@ func ValidateArtifactDeclarations(ctx context.Context, decls *ArtifactDeclaratio
 	return errs
 }
 
+// ValidateStepArtifacts validates step-scoped artifact declarations.
+func ValidateStepArtifacts(ctx context.Context, artifacts *StepArtifacts) *apis.FieldError {
+	if artifacts == nil {
+		return nil
+	}
+
+	cfg := config.FromContextOrDefaults(ctx)
+	if cfg == nil || cfg.FeatureFlags == nil || !cfg.FeatureFlags.EnableArtifacts {
+		return apis.ErrGeneric(fmt.Sprintf("feature flag %s should be set to true to use artifacts feature", config.EnableArtifacts), "")
+	}
+
+	var errs *apis.FieldError
+	outputNames := map[string]bool{}
+	for i, output := range artifacts.Outputs {
+		if output.Name == "" {
+			errs = errs.Also(apis.ErrMissingField(fmt.Sprintf("outputs[%d].name", i)))
+		} else if outputNames[output.Name] {
+			errs = errs.Also(&apis.FieldError{
+				Message: fmt.Sprintf("duplicate artifact output name %q", output.Name),
+				Paths:   []string{fmt.Sprintf("outputs[%d].name", i)},
+			})
+		}
+		outputNames[output.Name] = true
+		if output.Type != "" && output.Type != ArtifactTypeContent && output.Type != ArtifactTypeReference {
+			errs = errs.Also(&apis.FieldError{
+				Message: fmt.Sprintf("invalid artifact type %q, must be %q or %q", output.Type, ArtifactTypeContent, ArtifactTypeReference),
+				Paths:   []string{fmt.Sprintf("outputs[%d].type", i)},
+			})
+		}
+		if output.Subject {
+			errs = errs.Also(&apis.FieldError{
+				Message: "subject is not allowed on step-scoped artifacts, only on task-level outputs",
+				Paths:   []string{fmt.Sprintf("outputs[%d].subject", i)},
+			})
+		}
+		if output.Value != "" {
+			errs = errs.Also(&apis.FieldError{
+				Message: "value is not allowed on step-scoped artifacts, only on task-level outputs",
+				Paths:   []string{fmt.Sprintf("outputs[%d].value", i)},
+			})
+		}
+	}
+
+	return errs
+}
+
 // ValidatePipelineTaskArtifactBindings validates artifact bindings on a PipelineTask.
 func ValidatePipelineTaskArtifactBindings(bindings *PipelineTaskArtifacts) *apis.FieldError {
 	if bindings == nil {

@@ -318,6 +318,7 @@ ArtifactDeclaration describes a single artifact input or output.
 
 _Appears in:_
 - [ArtifactDeclarations](#artifactdeclarations)
+- [StepArtifacts](#stepartifacts)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -1341,7 +1342,28 @@ _Appears in:_
 | `ref` _[Ref](#ref)_ | Contains the reference to an existing StepAction. |  | Optional: \{\} <br /> |
 | `params` _[Params](#params)_ | Params declares parameters passed to this step action. |  | Optional: \{\} <br /> |
 | `results` _[StepResult](#stepresult) array_ | Results declares StepResults produced by the Step.<br />It can be used in an inlined Step when used to store Results to $(step.results.resultName.path).<br />It cannot be used when referencing StepActions using [v1.Step.Ref].<br />The Results declared by the StepActions will be stored here instead. |  | Optional: \{\} <br /> |
+| `artifacts` _[StepArtifacts](#stepartifacts)_ | Artifacts declares step-scoped artifact outputs produced by this Step.<br />Only outputs are supported at step scope. |  | Optional: \{\} <br /> |
 | `when` _[StepWhenExpressions](#stepwhenexpressions)_ | When is a list of when expressions that need to be true for the task to run |  | Optional: \{\} <br /> |
+
+
+#### StepArtifacts
+
+
+
+StepArtifacts declares the artifact outputs a Step or StepAction produces.
+Only outputs are declared at step scope — inputs are fetched once at Task
+scope and passed to steps as params.
+
+
+
+_Appears in:_
+- [Step](#step)
+- [StepActionSpec](#stepactionspec)
+- [StepActionSpec](#stepactionspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `outputs` _[ArtifactDeclaration](#artifactdeclaration) array_ | Outputs declares artifacts produced by this Step or StepAction. |  |  |
 
 
 #### StepOutputConfig
@@ -2328,6 +2350,7 @@ _Appears in:_
 | `workingDir` _string_ | Step's working directory.<br />If not specified, the container runtime's default will be used, which<br />might be configured in the container image.<br />Cannot be updated. |  | Optional: \{\} <br /> |
 | `params` _[ParamSpecs](#paramspecs)_ | Params is a list of input parameters required to run the stepAction.<br />Params must be supplied as inputs in Steps unless they declare a defaultvalue. |  | Optional: \{\} <br /> |
 | `results` _[StepResult](#stepresult) array_ | Results are values that this StepAction can output |  | Optional: \{\} <br /> |
+| `artifacts` _[StepArtifacts](#stepartifacts)_ | Artifacts declares artifact outputs this StepAction produces.<br />Only outputs are supported — inputs are declared at Task scope. |  | Optional: \{\} <br /> |
 | `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core)_ | SecurityContext defines the security options the Step should be run with.<br />If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br />More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/<br />The value set in StepAction will take precedence over the value from Task. |  | Optional: \{\} <br /> |
 | `volumeMounts` _[VolumeMount](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core) array_ | Volumes to mount into the Step's filesystem.<br />Cannot be updated. |  | Optional: \{\} <br /> |
 
@@ -3740,6 +3763,7 @@ _Appears in:_
 | `workingDir` _string_ | Step's working directory.<br />If not specified, the container runtime's default will be used, which<br />might be configured in the container image.<br />Cannot be updated. |  | Optional: \{\} <br /> |
 | `params` _[ParamSpecs](#paramspecs)_ | Params is a list of input parameters required to run the stepAction.<br />Params must be supplied as inputs in Steps unless they declare a defaultvalue. |  | Optional: \{\} <br /> |
 | `results` _[StepResult](#stepresult) array_ | Results are values that this StepAction can output |  | Optional: \{\} <br /> |
+| `artifacts` _[StepArtifacts](#stepartifacts)_ | Artifacts declares artifact outputs this StepAction produces.<br />Only outputs are supported — inputs are declared at Task scope. |  | Optional: \{\} <br /> |
 | `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core)_ | SecurityContext defines the security options the Step should be run with.<br />If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br />More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/<br />The value set in StepAction will take precedence over the value from Task. |  | Optional: \{\} <br /> |
 | `volumeMounts` _[VolumeMount](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core) array_ | Volumes to mount into the Step's filesystem.<br />Cannot be updated. |  | Optional: \{\} <br /> |
 

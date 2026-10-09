@@ -121,3 +121,122 @@ func TestApplyArtifactDeclarationPaths_NoArtifacts(t *testing.T) {
 		t.Errorf("script should not change without artifacts, got: %q", got.Steps[0].Script)
 	}
 }
+
+func TestApplyArtifactDeclarationPaths_ValueInheritsTypeFromStep(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Artifacts: &v1.ArtifactDeclarations{
+			Outputs: []v1.ArtifactDeclaration{
+				{
+					Name:    "image",
+					Subject: true,
+					Value:   "$(steps.build.artifacts.image)",
+				},
+			},
+		},
+		Steps: []v1.Step{{
+			Name:  "build",
+			Image: "buildah",
+			Artifacts: &v1.StepArtifacts{
+				Outputs: []v1.ArtifactDeclaration{
+					{Name: "image", Type: v1.ArtifactTypeReference},
+				},
+			},
+			Script: `echo "$(outputs.image.uri)"`,
+		}},
+	}
+
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
+	expectedScript := `echo "/tekton/artifacts/outputs/image.uri"`
+	if got.Steps[0].Script != expectedScript {
+		t.Errorf("expected reference path for value-inherited type:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
+
+func TestApplyArtifactDeclarationPaths_ValueInheritsContentType(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Artifacts: &v1.ArtifactDeclarations{
+			Outputs: []v1.ArtifactDeclaration{
+				{
+					Name:  "logs",
+					Value: "$(steps.test.artifacts.logs)",
+				},
+			},
+		},
+		Steps: []v1.Step{{
+			Name:  "test",
+			Image: "golang",
+			Artifacts: &v1.StepArtifacts{
+				Outputs: []v1.ArtifactDeclaration{
+					{Name: "logs", Type: v1.ArtifactTypeContent},
+				},
+			},
+			Script: `echo "$(outputs.logs.path)"`,
+		}},
+	}
+
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
+	expectedScript := `echo "/tekton/artifacts/outputs/logs"`
+	if got.Steps[0].Script != expectedScript {
+		t.Errorf("expected content path for value-inherited type:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
+
+func TestApplyArtifactDeclarationPaths_ExplicitTypeOverridesStepType(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Artifacts: &v1.ArtifactDeclarations{
+			Outputs: []v1.ArtifactDeclaration{
+				{
+					Name:  "image",
+					Type:  v1.ArtifactTypeReference,
+					Value: "$(steps.build.artifacts.image)",
+				},
+			},
+		},
+		Steps: []v1.Step{{
+			Name:  "build",
+			Image: "buildah",
+			Artifacts: &v1.StepArtifacts{
+				Outputs: []v1.ArtifactDeclaration{
+					{Name: "image", Type: v1.ArtifactTypeContent},
+				},
+			},
+			Script: `echo "$(outputs.image.uri)"`,
+		}},
+	}
+
+	got := resources.ApplyArtifactDeclarationPaths(spec, "")
+	expectedScript := `echo "/tekton/artifacts/outputs/image.uri"`
+	if got.Steps[0].Script != expectedScript {
+		t.Errorf("explicit type should override step type:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
+
+func TestApplyArtifacts_StepScopedArtifactPaths(t *testing.T) {
+	spec := &v1.TaskSpec{
+		Steps: []v1.Step{{
+			Name:  "build",
+			Image: "buildah",
+			Artifacts: &v1.StepArtifacts{
+				Outputs: []v1.ArtifactDeclaration{
+					{Name: "image", Type: v1.ArtifactTypeReference},
+					{Name: "logs", Type: v1.ArtifactTypeContent},
+				},
+			},
+			Script: `
+buildah push myimage
+echo "myimage@sha256:abc" > $(step.artifacts.outputs.image.uri)
+cp /tmp/build.log $(step.artifacts.outputs.logs.path)/
+`,
+		}},
+	}
+
+	got := resources.ApplyArtifacts(spec)
+	expectedScript := `
+buildah push myimage
+echo "myimage@sha256:abc" > /tekton/artifacts/outputs/image.uri
+cp /tmp/build.log /tekton/artifacts/outputs/logs/
+`
+	if got.Steps[0].Script != expectedScript {
+		t.Errorf("step-scoped artifact path mismatch:\ngot:  %q\nwant: %q", got.Steps[0].Script, expectedScript)
+	}
+}
