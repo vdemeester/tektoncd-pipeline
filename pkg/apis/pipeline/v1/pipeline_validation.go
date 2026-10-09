@@ -212,7 +212,7 @@ func (pt PipelineTask) Validate(ctx context.Context) (errs *apis.FieldError) {
 	default:
 		errs = errs.Also(pt.validateTask(ctx))
 	}
-	errs = errs.Also(ValidatePipelineTaskArtifactBindings(pt.Artifacts).ViaField("artifacts"))
+	errs = errs.Also(ValidatePipelineTaskArtifactBindings(ctx, pt.Artifacts).ViaField("artifacts"))
 	return errs
 }
 

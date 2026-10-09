@@ -164,11 +164,6 @@ func NewArtifactStorageFromMap(cfgMap map[string]string) (*ArtifactStorage, erro
 		as.OCIGroupByPipelineRun = b
 	}
 
-	if as.OCIRepository != "" && !as.Enabled {
-		return nil, fmt.Errorf("invalid artifact storage config: %s is set to %q but %s is false; set %s to true to activate artifact storage",
-			ociRepositoryKey, as.OCIRepository, enabledKey, enabledKey)
-	}
-
 	return as, nil
 }
 

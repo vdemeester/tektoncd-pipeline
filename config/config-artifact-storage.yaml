@@ -31,9 +31,9 @@ data:
     # Enable content artifact storage (default: "false").
     # When disabled, content artifacts are digested and recorded in TaskRun
     # status but not uploaded to a backend.
-    # NOTE: If oci-repository is set, enabled must be "true". The controller
-    # will reject the configuration if oci-repository is non-empty and
-    # enabled is "false".
+    # NOTE: If oci-repository is set, enabled must be "true". Creating or
+    # updating Tasks/Pipelines that use artifacts will be rejected when
+    # oci-repository is non-empty and enabled is "false".
     # enabled: "true"
 
     # Backend type (default: "oci").
