@@ -223,9 +223,13 @@ func readReferenceArtifact(output ArtifactOutput) (*pipelinev1.ArtifactValue, er
 
 // DownloadArtifact pulls an OCI artifact and extracts its layer contents to input.Path.
 // If the input carries inline data, it decodes and extracts directly without any network call.
+//
+// When input.Digest is non-empty, the downloaded content is verified against the
+// expected SHA-256 digest before extraction. A mismatch returns
+// ErrDigestMismatch and no files are written to input.Path.
 func DownloadArtifact(ctx context.Context, input ArtifactInput, insecure bool, opts ...remote.Option) error {
 	if input.Inline != "" {
-		return extractInlineArtifact(input.Inline, input.Path)
+		return verifyAndExtractInlineArtifact(input)
 	}
 
 	nameOpts := []name.Option{}
@@ -254,11 +258,77 @@ func DownloadArtifact(ctx context.Context, input ArtifactInput, insecure bool, o
 	}
 
 	for _, layer := range layers {
-		if err := extractLayer(layer, input.Path); err != nil {
-			return fmt.Errorf("extracting layer: %w", err)
+		if err := verifyAndExtractLayer(layer, input.Path, input.Digest); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+// verifyAndExtractInlineArtifact decodes base64 inline data, verifies its digest if
+// expected, and extracts it to the input path.
+func verifyAndExtractInlineArtifact(input ArtifactInput) error {
+	data, err := base64.StdEncoding.DecodeString(input.Inline)
+	if err != nil {
+		return fmt.Errorf("decoding inline artifact: %w", err)
+	}
+	if err := verifyDigest(data, input.Digest); err != nil {
+		return fmt.Errorf("inline artifact %q: %w", input.Name, err)
+	}
+	return extractTarGz(bytes.NewReader(data), input.Path)
+}
+
+// verifyAndExtractLayer reads a compressed layer, verifies its digest if
+// expected, and extracts it to dst.
+func verifyAndExtractLayer(layer v1.Layer, dst string, expectedDigest map[string]string) error {
+	if len(expectedDigest) == 0 {
+		return extractLayer(layer, dst)
+	}
+
+	rc, err := layer.Compressed()
+	if err != nil {
+		return fmt.Errorf("reading layer: %w", err)
+	}
+	defer rc.Close()
+	data, err := io.ReadAll(rc)
+	if err != nil {
+		return fmt.Errorf("reading layer data: %w", err)
+	}
+	if err := verifyDigest(data, expectedDigest); err != nil {
+		return err
+	}
+	return extractTarGz(bytes.NewReader(data), dst)
+}
+
+// ErrDigestMismatch is returned when downloaded content does not match the expected digest.
+type ErrDigestMismatch struct {
+	Algorithm string
+	Expected  string
+	Actual    string
+}
+
+func (e *ErrDigestMismatch) Error() string {
+	return fmt.Sprintf("digest verification failed: expected %s:%s, got %s:%s", e.Algorithm, e.Expected, e.Algorithm, e.Actual)
+}
+
+// verifyDigest computes the SHA-256 digest of data and compares it against
+// expectedDigest. If expectedDigest is empty or has no "sha256" entry, this
+// is a no-op.
+func verifyDigest(data []byte, expectedDigest map[string]string) error {
+	if len(expectedDigest) == 0 {
+		return nil
+	}
+	expected, ok := expectedDigest["sha256"]
+	if !ok {
+		return nil
+	}
+	h := sha256.New()
+	h.Write(data)
+	actual := fmt.Sprintf("%x", h.Sum(nil))
+	if actual != expected {
+		return &ErrDigestMismatch{Algorithm: "sha256", Expected: expected, Actual: actual}
+	}
 	return nil
 }
 
@@ -326,15 +396,6 @@ func extractLayer(layer v1.Layer, dst string) error {
 	}
 	defer rc.Close()
 	return extractTarGz(rc, dst)
-}
-
-// extractInlineArtifact decodes base64-encoded tar.gz data and extracts it to dst.
-func extractInlineArtifact(encoded string, dst string) error {
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return fmt.Errorf("decoding inline artifact: %w", err)
-	}
-	return extractTarGz(bytes.NewReader(data), dst)
 }
 
 // extractTarGz decompresses a gzip stream and extracts the tar entries to dst.

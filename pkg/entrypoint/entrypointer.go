@@ -320,6 +320,8 @@ func (e Entrypointer) Go() error {
 		allowExec, err1 := e.allowExec()
 
 		switch {
+		case err != nil:
+			// Artifact download failed (e.g. digest mismatch) — do not run the step.
 		case err1 != nil:
 			err = err1
 		case allowExec:
