@@ -18,6 +18,8 @@ package entrypoint
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http/httptest"
@@ -401,3 +403,179 @@ func TestUploadArtifact_InlineBudgetAllowsInline(t *testing.T) {
 	}
 }
 
+func TestDownloadArtifact_OCI_DigestVerification(t *testing.T) {
+	reg := registry.New()
+	srv := httptest.NewServer(reg)
+	defer srv.Close()
+	registryHost := strings.TrimPrefix(srv.URL, "http://")
+
+	srcDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(srcDir, "data.json"), []byte(`{"ok":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	output := ArtifactOutput{
+		Name:       "verified",
+		Type:       "content",
+		Path:       srcDir,
+		Repository: fmt.Sprintf("%s/artifacts/verified", registryHost),
+	}
+
+	ctx := context.Background()
+	av, err := UploadArtifact(ctx, output, true, 0, nil, remote.WithTransport(srv.Client().Transport))
+	if err != nil {
+		t.Fatalf("UploadArtifact() error = %v", err)
+	}
+
+	t.Run("correct digest", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name:   "verified",
+			URI:    av.Uri,
+			Path:   dstDir,
+			Digest: map[string]string{"sha256": av.Digest["sha256"]},
+		}
+		if err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport)); err != nil {
+			t.Fatalf("DownloadArtifact() error = %v", err)
+		}
+		content, err := os.ReadFile(filepath.Join(dstDir, "data.json"))
+		if err != nil {
+			t.Fatalf("failed to read downloaded file: %v", err)
+		}
+		if string(content) != `{"ok":true}` {
+			t.Errorf("content mismatch: got %q", string(content))
+		}
+	})
+
+	t.Run("wrong digest", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name:   "verified",
+			URI:    av.Uri,
+			Path:   dstDir,
+			Digest: map[string]string{"sha256": strings.Repeat("b", 64)},
+		}
+		err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport))
+		if err == nil {
+			t.Fatal("expected error for wrong digest")
+		}
+		var mismatch *ErrDigestMismatch
+		if !errors.As(err, &mismatch) {
+			t.Fatalf("expected ErrDigestMismatch, got %T: %v", err, mismatch)
+		}
+	})
+
+	t.Run("no digest skips verification", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name: "verified",
+			URI:  av.Uri,
+			Path: dstDir,
+		}
+		if err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport)); err != nil {
+			t.Fatalf("DownloadArtifact() error = %v", err)
+		}
+	})
+}
+
+func TestDownloadArtifact_Inline_DigestVerification(t *testing.T) {
+	srcDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(srcDir, "hello.txt"), []byte("hello world"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	buf, err := createTarGzBuffer(srcDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dataBytes := buf.Bytes()
+	encoded := base64.StdEncoding.EncodeToString(dataBytes)
+
+	h := sha256.New()
+	h.Write(dataBytes)
+	correctDigest := fmt.Sprintf("%x", h.Sum(nil))
+
+	t.Run("correct digest", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name:   "inline-verified",
+			Inline: encoded,
+			Path:   dstDir,
+			Digest: map[string]string{"sha256": correctDigest},
+		}
+		if err := DownloadArtifact(context.Background(), input, false); err != nil {
+			t.Fatalf("DownloadArtifact() error = %v", err)
+		}
+		content, err := os.ReadFile(filepath.Join(dstDir, "hello.txt"))
+		if err != nil {
+			t.Fatalf("failed to read file: %v", err)
+		}
+		if string(content) != "hello world" {
+			t.Errorf("content mismatch: got %q", string(content))
+		}
+	})
+
+	t.Run("wrong digest", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name:   "inline-verified",
+			Inline: encoded,
+			Path:   dstDir,
+			Digest: map[string]string{"sha256": strings.Repeat("f", 64)},
+		}
+		err := DownloadArtifact(context.Background(), input, false)
+		if err == nil {
+			t.Fatal("expected error for wrong digest")
+		}
+		var mismatch *ErrDigestMismatch
+		if !errors.As(err, &mismatch) {
+			t.Fatalf("expected ErrDigestMismatch, got %T: %v", err, err)
+		}
+	})
+
+	t.Run("no digest skips verification", func(t *testing.T) {
+		dstDir := t.TempDir()
+		input := ArtifactInput{
+			Name:   "inline-verified",
+			Inline: encoded,
+			Path:   dstDir,
+		}
+		if err := DownloadArtifact(context.Background(), input, false); err != nil {
+			t.Fatalf("DownloadArtifact() error = %v", err)
+		}
+	})
+}
+
+func TestVerifyDigest(t *testing.T) {
+	data := []byte("test data for digest verification")
+	h := sha256.New()
+	h.Write(data)
+	correctDigest := fmt.Sprintf("%x", h.Sum(nil))
+
+	tests := []struct {
+		name    string
+		digest  map[string]string
+		wantErr bool
+	}{
+		{name: "nil digest", digest: nil, wantErr: false},
+		{name: "empty digest", digest: map[string]string{}, wantErr: false},
+		{name: "correct sha256", digest: map[string]string{"sha256": correctDigest}, wantErr: false},
+		{name: "wrong sha256", digest: map[string]string{"sha256": strings.Repeat("0", 64)}, wantErr: true},
+		{name: "unknown algorithm only", digest: map[string]string{"md5": "abc"}, wantErr: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := verifyDigest(data, tc.digest)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("verifyDigest() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if tc.wantErr {
+				var mismatch *ErrDigestMismatch
+				if !errors.As(err, &mismatch) {
+					t.Errorf("expected ErrDigestMismatch, got %T", err)
+				}
+			}
+		})
+	}
+}
