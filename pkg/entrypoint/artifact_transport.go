@@ -252,14 +252,17 @@ func DownloadArtifact(ctx context.Context, input ArtifactInput, insecure bool, o
 		return fmt.Errorf("pulling artifact from %s: %w", ref.String(), err)
 	}
 
+	if err := verifyImageDigest(img, input.Digest); err != nil {
+		return fmt.Errorf("artifact %q: %w", input.Name, err)
+	}
 	layers, err := img.Layers()
 	if err != nil {
 		return fmt.Errorf("getting layers: %w", err)
 	}
 
 	for _, layer := range layers {
-		if err := verifyAndExtractLayer(layer, input.Path, input.Digest); err != nil {
-			return err
+		if err := extractLayer(layer, input.Path); err != nil {
+			return fmt.Errorf("extracting layer: %w", err)
 		}
 	}
 
@@ -279,26 +282,24 @@ func verifyAndExtractInlineArtifact(input ArtifactInput) error {
 	return extractTarGz(bytes.NewReader(data), input.Path)
 }
 
-// verifyAndExtractLayer reads a compressed layer, verifies its digest if
-// expected, and extracts it to dst.
-func verifyAndExtractLayer(layer v1.Layer, dst string, expectedDigest map[string]string) error {
+// verifyImageDigest checks the OCI image manifest digest against the expected digest
+func verifyImageDigest(img v1.Image, expectedDigest map[string]string) error {
 	if len(expectedDigest) == 0 {
-		return extractLayer(layer, dst)
+		return nil
 	}
-
-	rc, err := layer.Compressed()
+	expected, ok := expectedDigest["sha256"]
+	if !ok {
+		return nil
+	}
+	imgDigest, err := img.Digest()
 	if err != nil {
-		return fmt.Errorf("reading layer: %w", err)
+		return fmt.Errorf("computing image digest: %w", err)
 	}
-	defer rc.Close()
-	data, err := io.ReadAll(rc)
-	if err != nil {
-		return fmt.Errorf("reading layer data: %w", err)
+	actual := strings.TrimPrefix(imgDigest.String(), "sha256:")
+	if actual != expected {
+		return &ErrDigestMismatch{Algorithm: "sha256", Expected: expected, Actual: actual}
 	}
-	if err := verifyDigest(data, expectedDigest); err != nil {
-		return err
-	}
-	return extractTarGz(bytes.NewReader(data), dst)
+	return nil
 }
 
 // ErrDigestMismatch is returned when downloaded content does not match the expected digest.
