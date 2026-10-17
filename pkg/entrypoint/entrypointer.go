@@ -274,8 +274,13 @@ func (e Entrypointer) Go() error {
 			slog.Error("Error while substituting step artifacts:", slog.Any("error", err))
 		}
 
-		// Download input artifacts before step execution
+		// Download input artifacts before step execution.
+		// Reference artifacts carry only metadata (URI + digest) for
+		// variable substitution — there is no content to download.
 		for _, input := range e.ArtifactInputs {
+			if input.Reference {
+				continue
+			}
 			if dlErr := DownloadArtifact(ctx, input, e.ArtifactInsecure, e.ArtifactRemoteOpts...); dlErr != nil {
 				err = fmt.Errorf("downloading artifact %s: %w", input.Name, dlErr)
 				break
