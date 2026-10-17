@@ -87,6 +87,9 @@ func ResolveArtifactInputsForTask(pt *v1.PipelineTask, taskArtifacts map[string]
 		if artifactValue.Inline != "" {
 			input.Inline = artifactValue.Inline
 		}
+		if artifactValue.Ref == nil && artifactValue.Inline == "" {
+			input.Reference = true
+		}
 		inputs = append(inputs, input)
 	}
 
