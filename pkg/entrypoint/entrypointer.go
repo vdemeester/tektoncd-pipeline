@@ -34,10 +34,10 @@ import (
 	"time"
 
 	"cel.dev/cel-go/cel"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/tektoncd/pipeline/internal/artifactref"
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/types"
+	"github.com/tektoncd/pipeline/pkg/artifactstorage"
 	"github.com/tektoncd/pipeline/pkg/entrypoint/pipeline"
 	"github.com/tektoncd/pipeline/pkg/internal/resultref"
 	"github.com/tektoncd/pipeline/pkg/result"
@@ -186,13 +186,12 @@ type Entrypointer struct {
 	ArtifactInputs []ArtifactInput
 	// ArtifactOutputs are artifacts to upload after step execution.
 	ArtifactOutputs []ArtifactOutput
-	// ArtifactInsecure allows plain HTTP for artifact registry.
-	ArtifactInsecure bool
 	// ArtifactInlineThreshold is the size in bytes below which content artifacts
-	// are base64-inlined in the termination message instead of uploaded to OCI.
+	// are base64-inlined in the termination message instead of uploaded.
 	ArtifactInlineThreshold int
-	// ArtifactRemoteOpts are additional options for OCI remote operations (used in testing).
-	ArtifactRemoteOpts []remote.Option
+	// ArtifactProvider is the storage backend for uploading/downloading content
+	// artifacts. May be nil when artifact storage is disabled.
+	ArtifactProvider artifactstorage.Provider
 }
 
 // Waiter encapsulates waiting for files to exist.
@@ -281,7 +280,7 @@ func (e Entrypointer) Go() error {
 			if input.Reference {
 				continue
 			}
-			if dlErr := DownloadArtifact(ctx, input, e.ArtifactInsecure, e.ArtifactRemoteOpts...); dlErr != nil {
+			if dlErr := DownloadArtifact(ctx, input, e.ArtifactProvider); dlErr != nil {
 				err = fmt.Errorf("downloading artifact %s: %w", input.Name, dlErr)
 				break
 			}
@@ -345,7 +344,7 @@ func (e Entrypointer) Go() error {
 							continue
 						}
 					}
-					av, uploadErr := UploadArtifact(uploadCtx, ao, e.ArtifactInsecure, e.ArtifactInlineThreshold, budget, e.ArtifactRemoteOpts...)
+					av, uploadErr := UploadArtifact(uploadCtx, ao, e.ArtifactProvider, e.ArtifactInlineThreshold, budget)
 					if uploadErr != nil {
 						err = fmt.Errorf("uploading artifact %s: %w", ao.Name, uploadErr)
 						slog.Error("Error uploading artifact", slog.String("name", ao.Name), slog.Any("error", uploadErr))

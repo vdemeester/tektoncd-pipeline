@@ -30,17 +30,24 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	ocibackend "github.com/tektoncd/pipeline/pkg/artifactstorage/oci"
 )
 
+func testOCIProvider(srv *httptest.Server) *ocibackend.OCIProvider {
+	return ocibackend.NewOCIProvider("",
+		ocibackend.WithInsecure(true),
+		ocibackend.WithRemoteOptions(remote.WithTransport(srv.Client().Transport)),
+	)
+}
+
 func TestUploadAndDownloadArtifact(t *testing.T) {
-	// Start an in-memory OCI registry
 	reg := registry.New()
 	srv := httptest.NewServer(reg)
 	defer srv.Close()
 
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+	provider := testOCIProvider(srv)
 
-	// Create temp dir with test content to upload
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "result.json"), []byte(`{"passed": true}`), 0o644); err != nil {
 		t.Fatal(err)
@@ -52,7 +59,6 @@ func TestUploadAndDownloadArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Upload
 	output := ArtifactOutput{
 		Name:       "test-results",
 		Path:       srcDir,
@@ -61,7 +67,7 @@ func TestUploadAndDownloadArtifact(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	av, err := UploadArtifact(ctx, output, true, 0, nil, remote.WithTransport(srv.Client().Transport))
+	av, err := UploadArtifact(ctx, output, provider, 0, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -82,7 +88,6 @@ func TestUploadAndDownloadArtifact(t *testing.T) {
 		t.Error("expected non-zero Size")
 	}
 
-	// Download to a new dir
 	dstDir := t.TempDir()
 	input := ArtifactInput{
 		Name: "test-results",
@@ -90,11 +95,10 @@ func TestUploadAndDownloadArtifact(t *testing.T) {
 		Path: dstDir,
 	}
 
-	if err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport)); err != nil {
+	if err := DownloadArtifact(ctx, input, provider); err != nil {
 		t.Fatalf("DownloadArtifact() error = %v", err)
 	}
 
-	// Verify files were extracted
 	content, err := os.ReadFile(filepath.Join(dstDir, "result.json"))
 	if err != nil {
 		t.Fatalf("failed to read downloaded file: %v", err)
@@ -118,6 +122,7 @@ func TestUploadArtifact_EmptyDir(t *testing.T) {
 	defer srv.Close()
 
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+	provider := testOCIProvider(srv)
 
 	srcDir := t.TempDir()
 	output := ArtifactOutput{
@@ -128,7 +133,7 @@ func TestUploadArtifact_EmptyDir(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	av, err := UploadArtifact(ctx, output, true, 0, nil, remote.WithTransport(srv.Client().Transport))
+	av, err := UploadArtifact(ctx, output, provider, 0, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -138,15 +143,36 @@ func TestUploadArtifact_EmptyDir(t *testing.T) {
 }
 
 func TestDownloadArtifact_InvalidURI(t *testing.T) {
+	reg := registry.New()
+	srv := httptest.NewServer(reg)
+	defer srv.Close()
+	provider := testOCIProvider(srv)
+
 	ctx := context.Background()
 	input := ArtifactInput{
 		Name: "bad",
 		URI:  "not-a-valid-reference",
 		Path: t.TempDir(),
 	}
-	err := DownloadArtifact(ctx, input, true)
+	err := DownloadArtifact(ctx, input, provider)
 	if err == nil {
 		t.Error("expected error for invalid URI")
+	}
+}
+
+func TestDownloadArtifact_NilProvider(t *testing.T) {
+	ctx := context.Background()
+	input := ArtifactInput{
+		Name: "test",
+		URI:  "registry.example.com/artifacts/test@sha256:" + strings.Repeat("a", 64),
+		Path: t.TempDir(),
+	}
+	err := DownloadArtifact(ctx, input, nil)
+	if err == nil {
+		t.Error("expected error when provider is nil")
+	}
+	if !strings.Contains(err.Error(), "no storage provider") {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 
@@ -163,7 +189,7 @@ func TestUploadArtifact_ReferenceType(t *testing.T) {
 		Path: uriFile,
 	}
 
-	av, err := UploadArtifact(context.Background(), output, false, 0, nil)
+	av, err := UploadArtifact(context.Background(), output, nil, 0, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -189,14 +215,12 @@ func TestUploadArtifact_ReferenceType_NoDigest(t *testing.T) {
 		Path: uriFile,
 	}
 
-	if _, err := UploadArtifact(context.Background(), output, false, 0, nil); err == nil {
+	if _, err := UploadArtifact(context.Background(), output, nil, 0, nil); err == nil {
 		t.Fatal("expected error for reference artifact missing a digest")
 	}
 }
 
-func TestUploadArtifact_ContentType_NoRepository_DigestOnly(t *testing.T) {
-	// TEP-0192: with content storage disabled (no repository configured),
-	// content artifacts are still digested and recorded, just not uploaded.
+func TestUploadArtifact_ContentType_NoProvider_DigestOnly(t *testing.T) {
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "data.json"), []byte(`{"ok":true}`), 0o644); err != nil {
 		t.Fatal(err)
@@ -206,10 +230,9 @@ func TestUploadArtifact_ContentType_NoRepository_DigestOnly(t *testing.T) {
 		Name: "results",
 		Type: "content",
 		Path: srcDir,
-		// Repository intentionally left empty.
 	}
 
-	av, err := UploadArtifact(context.Background(), output, false, 0, nil)
+	av, err := UploadArtifact(context.Background(), output, nil, 0, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -233,7 +256,7 @@ func TestUploadArtifact_InlineSmallContent(t *testing.T) {
 		Path: srcDir,
 	}
 
-	av, err := UploadArtifact(context.Background(), output, false, 4096, nil)
+	av, err := UploadArtifact(context.Background(), output, nil, 4096, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -254,9 +277,8 @@ func TestUploadArtifact_InlineSmallContent(t *testing.T) {
 	}
 }
 
-func TestUploadArtifact_InlineExceedsThreshold_NoRepo_Error(t *testing.T) {
+func TestUploadArtifact_InlineExceedsThreshold_NoProvider_Error(t *testing.T) {
 	srcDir := t.TempDir()
-	// Write content larger than the threshold
 	if err := os.WriteFile(filepath.Join(srcDir, "big.bin"), make([]byte, 2000), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -267,20 +289,21 @@ func TestUploadArtifact_InlineExceedsThreshold_NoRepo_Error(t *testing.T) {
 		Path: srcDir,
 	}
 
-	_, err := UploadArtifact(context.Background(), output, false, 100, nil)
+	_, err := UploadArtifact(context.Background(), output, nil, 100, nil)
 	if err == nil {
-		t.Fatal("expected error when content exceeds inline threshold and no repo is configured")
+		t.Fatal("expected error when content exceeds inline threshold and no provider is configured")
 	}
 	if !strings.Contains(err.Error(), "exceeds inline threshold") {
 		t.Errorf("unexpected error message: %v", err)
 	}
 }
 
-func TestUploadArtifact_InlineExceedsThreshold_WithRepo_UploadsToOCI(t *testing.T) {
+func TestUploadArtifact_InlineExceedsThreshold_WithProvider_Uploads(t *testing.T) {
 	reg := registry.New()
 	srv := httptest.NewServer(reg)
 	defer srv.Close()
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+	provider := testOCIProvider(srv)
 
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "big.bin"), make([]byte, 2000), 0o644); err != nil {
@@ -294,7 +317,7 @@ func TestUploadArtifact_InlineExceedsThreshold_WithRepo_UploadsToOCI(t *testing.
 		Repository: fmt.Sprintf("%s/artifacts/big", registryHost),
 	}
 
-	av, err := UploadArtifact(context.Background(), output, true, 100, nil, remote.WithTransport(srv.Client().Transport))
+	av, err := UploadArtifact(context.Background(), output, provider, 100, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -302,21 +325,22 @@ func TestUploadArtifact_InlineExceedsThreshold_WithRepo_UploadsToOCI(t *testing.
 		t.Error("expected no Inline for content above threshold")
 	}
 	if av.Uri == "" {
-		t.Error("expected Uri when falling back to OCI upload")
+		t.Error("expected Uri when falling back to backend upload")
 	}
 	if av.Ref == nil {
-		t.Error("expected Ref for OCI upload")
+		t.Error("expected Ref for backend upload")
 	}
 	if av.Ref != nil && av.Ref.Backend != "oci" {
 		t.Errorf("expected backend=oci, got %q", av.Ref.Backend)
 	}
 }
 
-func TestUploadArtifact_InlineBudgetExhausted_FallsBackToOCI(t *testing.T) {
+func TestUploadArtifact_InlineBudgetExhausted_FallsBackToProvider(t *testing.T) {
 	reg := registry.New()
 	srv := httptest.NewServer(reg)
 	defer srv.Close()
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+	provider := testOCIProvider(srv)
 
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "small.txt"), []byte("hello"), 0o644); err != nil {
@@ -331,13 +355,10 @@ func TestUploadArtifact_InlineBudgetExhausted_FallsBackToOCI(t *testing.T) {
 	}
 
 	budgetFile := filepath.Join(t.TempDir(), "budget")
-	budget := NewInlineBudgetTracker(budgetFile, 10) // very small budget
-
-	// First artifact consumes the budget
+	budget := NewInlineBudgetTracker(budgetFile, 10)
 	budget.TryConsume(10)
 
-	// Second artifact fits per-artifact threshold but budget is exhausted — should upload to OCI
-	av, err := UploadArtifact(context.Background(), output, true, 4096, budget, remote.WithTransport(srv.Client().Transport))
+	av, err := UploadArtifact(context.Background(), output, provider, 4096, budget)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -345,11 +366,11 @@ func TestUploadArtifact_InlineBudgetExhausted_FallsBackToOCI(t *testing.T) {
 		t.Error("expected no Inline when pod budget is exhausted")
 	}
 	if av.Uri == "" {
-		t.Error("expected Uri when falling back to OCI upload")
+		t.Error("expected Uri when falling back to backend upload")
 	}
 }
 
-func TestUploadArtifact_InlineBudgetExhausted_NoRepo_Error(t *testing.T) {
+func TestUploadArtifact_InlineBudgetExhausted_NoProvider_Error(t *testing.T) {
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "small.txt"), []byte("hello"), 0o644); err != nil {
 		t.Fatal(err)
@@ -359,16 +380,15 @@ func TestUploadArtifact_InlineBudgetExhausted_NoRepo_Error(t *testing.T) {
 		Name: "small",
 		Type: "content",
 		Path: srcDir,
-		// No repository — no fallback
 	}
 
 	budgetFile := filepath.Join(t.TempDir(), "budget")
 	budget := NewInlineBudgetTracker(budgetFile, 10)
-	budget.TryConsume(10) // exhaust budget
+	budget.TryConsume(10)
 
-	_, err := UploadArtifact(context.Background(), output, false, 4096, budget)
+	_, err := UploadArtifact(context.Background(), output, nil, 4096, budget)
 	if err == nil {
-		t.Fatal("expected error when budget is exhausted and no repo is configured")
+		t.Fatal("expected error when budget is exhausted and no provider is configured")
 	}
 	var budgetErr *ErrInlineBudgetExceeded
 	if !errors.As(err, &budgetErr) {
@@ -389,9 +409,9 @@ func TestUploadArtifact_InlineBudgetAllowsInline(t *testing.T) {
 	}
 
 	budgetFile := filepath.Join(t.TempDir(), "budget")
-	budget := NewInlineBudgetTracker(budgetFile, 2048) // plenty of budget
+	budget := NewInlineBudgetTracker(budgetFile, 2048)
 
-	av, err := UploadArtifact(context.Background(), output, false, 4096, budget)
+	av, err := UploadArtifact(context.Background(), output, nil, 4096, budget)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
@@ -403,11 +423,12 @@ func TestUploadArtifact_InlineBudgetAllowsInline(t *testing.T) {
 	}
 }
 
-func TestDownloadArtifact_OCI_DigestVerification(t *testing.T) {
+func TestDownloadArtifact_OCI_RoundTrip(t *testing.T) {
 	reg := registry.New()
 	srv := httptest.NewServer(reg)
 	defer srv.Close()
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+	provider := testOCIProvider(srv)
 
 	srcDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(srcDir, "data.json"), []byte(`{"ok":true}`), 0o644); err != nil {
@@ -422,60 +443,28 @@ func TestDownloadArtifact_OCI_DigestVerification(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	av, err := UploadArtifact(ctx, output, true, 0, nil, remote.WithTransport(srv.Client().Transport))
+	av, err := UploadArtifact(ctx, output, provider, 0, nil)
 	if err != nil {
 		t.Fatalf("UploadArtifact() error = %v", err)
 	}
 
-	t.Run("correct digest", func(t *testing.T) {
-		dstDir := t.TempDir()
-		input := ArtifactInput{
-			Name:   "verified",
-			URI:    av.Uri,
-			Path:   dstDir,
-			Digest: map[string]string{"sha256": av.Digest["sha256"]},
-		}
-		if err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport)); err != nil {
-			t.Fatalf("DownloadArtifact() error = %v", err)
-		}
-		content, err := os.ReadFile(filepath.Join(dstDir, "data.json"))
-		if err != nil {
-			t.Fatalf("failed to read downloaded file: %v", err)
-		}
-		if string(content) != `{"ok":true}` {
-			t.Errorf("content mismatch: got %q", string(content))
-		}
-	})
-
-	t.Run("wrong digest", func(t *testing.T) {
-		dstDir := t.TempDir()
-		input := ArtifactInput{
-			Name:   "verified",
-			URI:    av.Uri,
-			Path:   dstDir,
-			Digest: map[string]string{"sha256": strings.Repeat("b", 64)},
-		}
-		err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport))
-		if err == nil {
-			t.Fatal("expected error for wrong digest")
-		}
-		var mismatch *ErrDigestMismatch
-		if !errors.As(err, &mismatch) {
-			t.Fatalf("expected ErrDigestMismatch, got %T: %v", err, mismatch)
-		}
-	})
-
-	t.Run("no digest skips verification", func(t *testing.T) {
-		dstDir := t.TempDir()
-		input := ArtifactInput{
-			Name: "verified",
-			URI:  av.Uri,
-			Path: dstDir,
-		}
-		if err := DownloadArtifact(ctx, input, true, remote.WithTransport(srv.Client().Transport)); err != nil {
-			t.Fatalf("DownloadArtifact() error = %v", err)
-		}
-	})
+	dstDir := t.TempDir()
+	input := ArtifactInput{
+		Name:   "verified",
+		URI:    av.Uri,
+		Path:   dstDir,
+		Digest: map[string]string{"sha256": av.Digest["sha256"]},
+	}
+	if err := DownloadArtifact(ctx, input, provider); err != nil {
+		t.Fatalf("DownloadArtifact() error = %v", err)
+	}
+	content, err := os.ReadFile(filepath.Join(dstDir, "data.json"))
+	if err != nil {
+		t.Fatalf("failed to read downloaded file: %v", err)
+	}
+	if string(content) != `{"ok":true}` {
+		t.Errorf("content mismatch: got %q", string(content))
+	}
 }
 
 func TestDownloadArtifact_Inline_DigestVerification(t *testing.T) {
@@ -503,7 +492,7 @@ func TestDownloadArtifact_Inline_DigestVerification(t *testing.T) {
 			Path:   dstDir,
 			Digest: map[string]string{"sha256": correctDigest},
 		}
-		if err := DownloadArtifact(context.Background(), input, false); err != nil {
+		if err := DownloadArtifact(context.Background(), input, nil); err != nil {
 			t.Fatalf("DownloadArtifact() error = %v", err)
 		}
 		content, err := os.ReadFile(filepath.Join(dstDir, "hello.txt"))
@@ -523,7 +512,7 @@ func TestDownloadArtifact_Inline_DigestVerification(t *testing.T) {
 			Path:   dstDir,
 			Digest: map[string]string{"sha256": strings.Repeat("f", 64)},
 		}
-		err := DownloadArtifact(context.Background(), input, false)
+		err := DownloadArtifact(context.Background(), input, nil)
 		if err == nil {
 			t.Fatal("expected error for wrong digest")
 		}
@@ -540,7 +529,7 @@ func TestDownloadArtifact_Inline_DigestVerification(t *testing.T) {
 			Inline: encoded,
 			Path:   dstDir,
 		}
-		if err := DownloadArtifact(context.Background(), input, false); err != nil {
+		if err := DownloadArtifact(context.Background(), input, nil); err != nil {
 			t.Fatalf("DownloadArtifact() error = %v", err)
 		}
 	})

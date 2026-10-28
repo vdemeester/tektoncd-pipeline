@@ -72,7 +72,8 @@ type ArtifactStorage struct {
 	// OCIRepository is the base OCI repository for artifact storage
 	// e.g., "ghcr.io/org/project/artifacts" or "registry:5000/artifacts"
 	OCIRepository string
-	// Insecure allows plain HTTP for the OCI registry
+	// Insecure allows plain HTTP and skips TLS certificate verification
+	// for the OCI registry.
 	Insecure bool
 	// OCICredentialsSecret is the name of a kubernetes.io/dockerconfigjson Secret
 	// for OCI registry authentication. If empty, ServiceAccount imagePullSecrets are used.

@@ -22,26 +22,16 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
-	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/v1/mutate"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
-	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/tektoncd/pipeline/pkg/apis/config"
-
 	pipelinev1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/artifactstorage"
 )
 
 // ArtifactInput describes an artifact to download before step execution.
@@ -74,14 +64,16 @@ type ArtifactOutput struct {
 //
 // For "content" artifacts, this archives output.Path into a tar.gz buffer and
 // decides based on inlineThreshold and the pod-wide inline budget whether to
-// inline the content in the termination message or push it to OCI:
+// inline the content in the termination message or push it to the storage
+// backend via the Provider interface:
 //   - size <= inlineThreshold AND pod budget allows: base64-encode and return inline
-//   - size fits inlineThreshold but pod budget exhausted, with repository: push to OCI
-//   - size > inlineThreshold with repository: push to OCI
-//   - size > inlineThreshold and pod budget exhausted without repository: error (no fallback)
+//   - size fits inlineThreshold but pod budget exhausted, with provider: push to backend
+//   - size > inlineThreshold with provider: push to backend
+//   - size > inlineThreshold and pod budget exhausted without provider: error (no fallback)
 //
-// budget may be nil, in which case only the per-artifact threshold is checked.
-func UploadArtifact(ctx context.Context, output ArtifactOutput, insecure bool, inlineThreshold int, budget *InlineBudgetTracker, opts ...remote.Option) (*pipelinev1.ArtifactValue, error) {
+// provider may be nil when storage is disabled. budget may be nil, in which
+// case only the per-artifact threshold is checked.
+func UploadArtifact(ctx context.Context, output ArtifactOutput, provider artifactstorage.Provider, inlineThreshold int, budget *InlineBudgetTracker) (*pipelinev1.ArtifactValue, error) {
 	if output.Type == pipelinev1.ArtifactTypeReference {
 		return readReferenceArtifact(output)
 	}
@@ -112,11 +104,8 @@ func UploadArtifact(ctx context.Context, output ArtifactOutput, insecure bool, i
 		// Pod budget exhausted — fall through to backend upload.
 	}
 
-	// No repository configured — cannot fall back to backend upload.
-	if output.Repository == "" {
-		// TEP-0192 "disabled storage" default: content artifacts are still
-		// digested and recorded, just not uploaded, when no storage backend
-		// is configured.
+	// No provider configured — cannot fall back to backend upload.
+	if provider == nil {
 		if inlineThreshold > 0 {
 			if budget != nil && int(dataSize) <= inlineThreshold {
 				return nil, &ErrInlineBudgetExceeded{
@@ -128,7 +117,7 @@ func UploadArtifact(ctx context.Context, output ArtifactOutput, insecure bool, i
 			return nil, fmt.Errorf("artifact %q (%d bytes) exceeds inline threshold (%d) and no storage backend is configured",
 				output.Name, dataSize, inlineThreshold)
 		}
-		slog.Warn("Artifact storage is not enabled, content artifact will be digested but not uploaded to OCI. "+
+		slog.Warn("Artifact storage is not enabled, content artifact will be digested but not uploaded. "+
 			"Set enabled: \"true\" in config-artifact-storage ConfigMap to enable uploads.",
 			slog.String("name", output.Name), slog.Int64("size", dataSize))
 		return &pipelinev1.ArtifactValue{
@@ -137,58 +126,21 @@ func UploadArtifact(ctx context.Context, output ArtifactOutput, insecure bool, i
 		}, nil
 	}
 
-	// OCI upload path
-	layerMediaType := types.MediaType(output.MediaType)
-	if layerMediaType == "" {
-		layerMediaType = types.OCILayer
-	}
-	layer, err := tarball.LayerFromReader(bytes.NewReader(dataBytes), tarball.WithMediaType(layerMediaType))
+	// upload path
+	ref, err := provider.Store(ctx, artifactstorage.StoreOptions{
+		ArtifactName: output.Name,
+		MediaType:    output.MediaType,
+		Repository:   output.Repository,
+	}, bytes.NewReader(dataBytes))
 	if err != nil {
-		return nil, fmt.Errorf("creating layer: %w", err)
-	}
-
-	img, err := mutate.AppendLayers(mutate.MediaType(empty.Image, types.OCIManifestSchema1), layer)
-	if err != nil {
-		return nil, fmt.Errorf("creating image with layer: %w", err)
-	}
-
-	nameOpts := []name.Option{}
-	if insecure {
-		nameOpts = append(nameOpts, name.Insecure)
-	}
-	repo, err := name.NewRepository(output.Repository, nameOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("parsing repository %q: %w", output.Repository, err)
-	}
-
-	// Get the digest before pushing (this materializes the layer)
-	digest, err := img.Digest()
-	if err != nil {
-		return nil, fmt.Errorf("computing digest: %w", err)
-	}
-
-	ref := repo.Digest(digest.String())
-
-	remoteOpts := append([]remote.Option{remote.WithContext(ctx)}, opts...)
-	if insecure {
-		remoteOpts = append(remoteOpts, remote.WithTransport(&http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // user opted in via insecure flag
-		}))
-	}
-	if err := remote.Write(ref, img, remoteOpts...); err != nil {
-		return nil, fmt.Errorf("pushing artifact to %s: %w", ref.String(), err)
+		return nil, fmt.Errorf("storing artifact %q: %w", output.Name, err)
 	}
 
 	return &pipelinev1.ArtifactValue{
-		Uri:    ref.String(),
-		Digest: map[pipelinev1.Algorithm]string{"sha256": strings.TrimPrefix(digest.String(), "sha256:")},
+		Uri:    ref.Location,
+		Digest: map[pipelinev1.Algorithm]string{"sha256": strings.TrimPrefix(ref.Digest, "sha256:")},
 		Size:   dataSize,
-		Ref: &pipelinev1.ArtifactStorageRef{
-			Backend:     config.DefaultBackend,
-			Location:    ref.String(),
-			Digest:      digest.String(),
-			ContentType: string(layerMediaType),
-		},
+		Ref:    ref,
 	}, nil
 }
 
@@ -222,52 +174,38 @@ func readReferenceArtifact(output ArtifactOutput) (*pipelinev1.ArtifactValue, er
 	}, nil
 }
 
-// DownloadArtifact pulls an OCI artifact and extracts its layer contents to input.Path.
-// If the input carries inline data, it decodes and extracts directly without any network call.
+// DownloadArtifact fetches an artifact via the Provider interface and extracts
+// its contents to input.Path. If the input carries inline data, it decodes and
+// extracts directly without any network call.
 //
-// When input.Digest is non-empty, the downloaded content is verified against the
-// expected SHA-256 digest before extraction. A mismatch returns
-// ErrDigestMismatch and no files are written to input.Path.
-func DownloadArtifact(ctx context.Context, input ArtifactInput, insecure bool, opts ...remote.Option) error {
+// Digest verification is handled by the Provider layer (via VerifiedFetch for
+// non-content-addressed backends, or inherently by the transport for
+// content-addressed backends like OCI).
+func DownloadArtifact(ctx context.Context, input ArtifactInput, provider artifactstorage.Provider) error {
 	if input.Inline != "" {
 		return verifyAndExtractInlineArtifact(input)
 	}
 
-	nameOpts := []name.Option{}
-	if insecure {
-		nameOpts = append(nameOpts, name.Insecure)
+	if provider == nil {
+		return fmt.Errorf("no storage provider configured for downloading artifact %q", input.Name)
 	}
-	ref, err := name.ParseReference(input.URI, nameOpts...)
+
+	digestStr := ""
+	if d, ok := input.Digest["sha256"]; ok {
+		digestStr = "sha256:" + d
+	}
+	storageRef := &pipelinev1.ArtifactStorageRef{
+		Location: input.URI,
+		Digest:   digestStr,
+	}
+
+	rc, err := artifactstorage.VerifiedFetch(ctx, provider, storageRef)
 	if err != nil {
-		return fmt.Errorf("parsing artifact reference %q: %w", input.URI, err)
+		return fmt.Errorf("fetching artifact %q from %s: %w", input.Name, input.URI, err)
 	}
+	defer rc.Close()
 
-	remoteOpts := append([]remote.Option{remote.WithContext(ctx)}, opts...)
-	if insecure {
-		remoteOpts = append(remoteOpts, remote.WithTransport(&http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // user opted in via insecure flag
-		}))
-	}
-	img, err := remote.Image(ref, remoteOpts...)
-	if err != nil {
-		return fmt.Errorf("pulling artifact from %s: %w", ref.String(), err)
-	}
-
-	if err := verifyImageDigest(img, input.Digest); err != nil {
-		return fmt.Errorf("artifact %q: %w", input.Name, err)
-	}
-	layers, err := img.Layers()
-	if err != nil {
-		return fmt.Errorf("getting layers: %w", err)
-	}
-
-	for _, layer := range layers {
-		if err := extractLayer(layer, input.Path); err != nil {
-			return fmt.Errorf("extracting layer: %w", err)
-		}
-	}
-
-	return nil
+	return extractTarGz(rc, input.Path)
 }
 
 // verifyAndExtractInlineArtifact decodes base64 inline data, verifies its digest if
@@ -281,26 +219,6 @@ func verifyAndExtractInlineArtifact(input ArtifactInput) error {
 		return fmt.Errorf("inline artifact %q: %w", input.Name, err)
 	}
 	return extractTarGz(bytes.NewReader(data), input.Path)
-}
-
-// verifyImageDigest checks the OCI image manifest digest against the expected digest
-func verifyImageDigest(img v1.Image, expectedDigest map[string]string) error {
-	if len(expectedDigest) == 0 {
-		return nil
-	}
-	expected, ok := expectedDigest["sha256"]
-	if !ok {
-		return nil
-	}
-	imgDigest, err := img.Digest()
-	if err != nil {
-		return fmt.Errorf("computing image digest: %w", err)
-	}
-	actual := strings.TrimPrefix(imgDigest.String(), "sha256:")
-	if actual != expected {
-		return &ErrDigestMismatch{Algorithm: "sha256", Expected: expected, Actual: actual}
-	}
-	return nil
 }
 
 // ErrDigestMismatch is returned when downloaded content does not match the expected digest.
@@ -388,16 +306,6 @@ func createTarGzBuffer(path string) (*bytes.Buffer, error) {
 	}
 
 	return &buf, nil
-}
-
-// extractLayer extracts a tar.gz layer to the destination directory.
-func extractLayer(layer v1.Layer, dst string) error {
-	rc, err := layer.Compressed()
-	if err != nil {
-		return err
-	}
-	defer rc.Close()
-	return extractTarGz(rc, dst)
 }
 
 // extractTarGz decompresses a gzip stream and extracts the tar entries to dst.

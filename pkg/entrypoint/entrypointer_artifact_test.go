@@ -27,18 +27,19 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	ocibackend "github.com/tektoncd/pipeline/pkg/artifactstorage/oci"
 )
 
-func transportOpts(srv *httptest.Server) []remote.Option {
-	return []remote.Option{remote.WithTransport(srv.Client().Transport)}
-}
-
 func TestEntrypointer_ArtifactOutputUpload(t *testing.T) {
-	// Start an in-memory OCI registry
 	reg := registry.New()
 	srv := httptest.NewServer(reg)
 	defer srv.Close()
 	registryHost := strings.TrimPrefix(srv.URL, "http://")
+
+	provider := ocibackend.NewOCIProvider("",
+		ocibackend.WithInsecure(true),
+		ocibackend.WithRemoteOptions(remote.WithTransport(srv.Client().Transport)),
+	)
 
 	tmpDir := t.TempDir()
 	stepMetadataDir := filepath.Join(tmpDir, "step-metadata")
@@ -46,8 +47,6 @@ func TestEntrypointer_ArtifactOutputUpload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create the output directory empty; the step runner writes the file so the
-	// entrypoint's pre-step snapshot sees a new artifact to upload.
 	outputDir := filepath.Join(tmpDir, "output-artifacts")
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -72,15 +71,13 @@ func TestEntrypointer_ArtifactOutputUpload(t *testing.T) {
 				MediaType:  "application/vnd.cyclonedx+json",
 			},
 		},
-		ArtifactInsecure:   true,
-		ArtifactRemoteOpts: transportOpts(srv),
+		ArtifactProvider: provider,
 	}
 
 	if err := e.Go(); err != nil {
 		t.Fatalf("Entrypointer.Go() error = %v", err)
 	}
 
-	// Verify artifact results were written to termination message
 	termContent, err := os.ReadFile(filepath.Join(tmpDir, "termination"))
 	if err != nil {
 		t.Fatalf("failed to read termination file: %v", err)
