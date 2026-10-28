@@ -33,6 +33,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/tektoncd/pipeline/cmd/entrypoint/subcommands"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/types"
+	"github.com/tektoncd/pipeline/pkg/artifactstorage"
+	ocibackend "github.com/tektoncd/pipeline/pkg/artifactstorage/oci"
 	"github.com/tektoncd/pipeline/pkg/credentials/dockercreds"
 	"github.com/tektoncd/pipeline/pkg/credentials/gitcreds"
 	credwriter "github.com/tektoncd/pipeline/pkg/credentials/writer"
@@ -63,9 +65,10 @@ var (
 	compressTerminationMessage = flag.Bool("compress_termination_message", false, "If true, compress termination messages with flate to fit more results in the 4KB Kubernetes limit.")
 	artifactInputs             = flag.String("artifact_inputs", "", "JSON-encoded artifact inputs to download before step execution")
 	artifactOutputs            = flag.String("artifact_outputs", "", "JSON-encoded artifact outputs to upload after step execution")
-	artifactInsecure           = flag.Bool("artifact_insecure", false, "Use plain HTTP for artifact registry")
+	artifactBackend            = flag.String("artifact_backend", "oci", "Storage backend for content artifacts (e.g., oci)")
+	artifactInsecure           = flag.Bool("artifact_insecure", false, "Allow plain HTTP and skip TLS verification for artifact registry")
 	artifactDockerConfig       = flag.String("artifact_docker_config", "", "Docker config JSON for artifact registry authentication")
-	artifactInlineThreshold    = flag.Int("artifact_inline_threshold", 0, "Size for bytes below which artifact content is inlined in status instead of uploading to the registry (default: OCI)")
+	artifactInlineThreshold    = flag.Int("artifact_inline_threshold", 0, "Size in bytes below which artifact content is inlined in status instead of uploading to the backend")
 )
 
 const (
@@ -160,7 +163,6 @@ func main() {
 		SpireWorkloadAPI:           spireWorkloadAPI,
 		ResultExtractionMethod:     *resultExtractionMethod,
 		CompressTerminationMessage: *compressTerminationMessage,
-		ArtifactInsecure:           *artifactInsecure,
 		ArtifactInlineThreshold:    *artifactInlineThreshold,
 	}
 
@@ -179,8 +181,6 @@ func main() {
 		e.ArtifactOutputs = ao
 	}
 	if len(e.ArtifactInputs) > 0 || len(e.ArtifactOutputs) > 0 {
-		// If controller injected secret data for artifact registry,
-		// write it to a known location so DefaultKeychain finds it for the authentication
 		if *artifactDockerConfig != "" {
 			cfgDir := filepath.Join(os.TempDir(), "tekton-artifact-docker")
 			if err := os.MkdirAll(cfgDir, 0o700); err == nil {
@@ -189,7 +189,21 @@ func main() {
 				}
 			}
 		}
-		e.ArtifactRemoteOpts = append(e.ArtifactRemoteOpts, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+
+		registry := artifactstorage.NewRegistry()
+		ociProvider := ocibackend.NewOCIProvider("",
+			ocibackend.WithInsecure(*artifactInsecure),
+			ocibackend.WithRemoteOptions(remote.WithAuthFromKeychain(authn.DefaultKeychain)),
+		)
+		if err := registry.Register(ociProvider); err != nil {
+			log.Fatalf("Error registering OCI artifact provider: %v", err)
+		}
+
+		provider, err := registry.Get(*artifactBackend)
+		if err != nil {
+			log.Fatalf("Error resolving artifact backend %q: %v", *artifactBackend, err)
+		}
+		e.ArtifactProvider = provider
 	}
 
 	// Copy any creds injected by the controller into the $HOME directory of the current
