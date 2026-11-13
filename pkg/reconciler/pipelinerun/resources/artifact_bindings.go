@@ -60,18 +60,58 @@ func resolveArtifactBinding(from string, artifacts map[string]*v1.Artifacts) (*v
 	return nil, fmt.Errorf("artifact %q not found in task %q outputs", artifactName, taskName)
 }
 
+// ResolvePipelineArtifactOutputs resolves declared Pipeline outputs from completed task artifacts.
+func ResolvePipelineArtifactOutputs(ps *v1.PipelineSpec, taskArtifacts map[string]*v1.Artifacts) *v1.Artifacts {
+	if ps == nil || ps.Artifacts == nil {
+		return nil
+	}
+	out := &v1.Artifacts{}
+	for _, declaration := range ps.Artifacts.Outputs {
+		parts := strings.Split(declaration.From, ".")
+		producer, ok := taskArtifacts[parts[1]]
+		if len(parts) != 4 || !ok || producer == nil || len(producer.Outputs) == 0 {
+			continue
+		}
+		for _, artifact := range producer.Outputs {
+			if artifact.Name == parts[3] && len(artifact.Values) > 0 {
+				out.Outputs = append(out.Outputs, v1.Artifact{Name: declaration.Name, Subject: artifact.Subject, Values: artifact.Values})
+				break
+			}
+		}
+	}
+	return out
+}
+
 // ResolveArtifactInputsForTask resolves all artifact input bindings for a PipelineTask,
 // returning ArtifactInput structs ready to be serialized as entrypoint args.
-func ResolveArtifactInputsForTask(pt *v1.PipelineTask, taskArtifacts map[string]*v1.Artifacts) ([]entrypoint.ArtifactInput, error) {
+func ResolveArtifactInputsForTask(pt *v1.PipelineTask, taskArtifacts map[string]*v1.Artifacts, pipelineInputs ...*v1.PipelineRunArtifacts) ([]entrypoint.ArtifactInput, error) {
 	if pt.Artifacts == nil || len(pt.Artifacts.Inputs) == 0 {
 		return nil, nil
 	}
 
 	var inputs []entrypoint.ArtifactInput
 	for _, binding := range pt.Artifacts.Inputs {
-		artifactValue, err := resolveArtifactBinding(binding.From, taskArtifacts)
-		if err != nil {
-			return nil, fmt.Errorf("resolving artifact input %q: %w", binding.Name, err)
+		var artifactValue *v1.ArtifactValue
+		var err error
+		if strings.HasPrefix(binding.From, "artifacts.inputs.") {
+			name := strings.TrimPrefix(binding.From, "artifacts.inputs.")
+			if len(pipelineInputs) == 0 || pipelineInputs[0] == nil {
+				return nil, fmt.Errorf("pipeline artifact input %q is not provided", name)
+			}
+			for _, a := range pipelineInputs[0].Inputs {
+				if a.Name == name && len(a.Values) > 0 {
+					artifactValue = &a.Values[0]
+					break
+				}
+			}
+			if artifactValue == nil {
+				return nil, fmt.Errorf("pipeline artifact input %q is not provided", name)
+			}
+		} else {
+			artifactValue, err = resolveArtifactBinding(binding.From, taskArtifacts)
+			if err != nil {
+				return nil, fmt.Errorf("resolving artifact input %q: %w", binding.Name, err)
+			}
 		}
 		input := entrypoint.ArtifactInput{
 			Name: binding.Name,

@@ -1012,6 +1012,10 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1.PipelineRun, getPipel
 	finalPipelineTaskStatus := pipelineRunFacts.GetPipelineFinalTaskStatus()
 	pipelineTaskStatus = kmap.Union(pipelineTaskStatus, finalPipelineTaskStatus)
 
+	if (after.Status == corev1.ConditionTrue || after.Status == corev1.ConditionFalse) && pr.Status.Artifacts == nil {
+		pr.Status.Artifacts = resources.ResolvePipelineArtifactOutputs(pipelineSpec, pipelineRunFacts.State.GetTaskRunsArtifacts())
+	}
+
 	if after.Status == corev1.ConditionTrue || after.Status == corev1.ConditionFalse {
 		pr.Status.Results, err = resources.ApplyTaskResultsToPipelineResults(
 			pipelineSpec.Results,
@@ -1480,7 +1484,7 @@ func (c *Reconciler) createTaskRun(ctx context.Context, taskRunName string, para
 	cfg := config.FromContextOrDefaults(ctx)
 	if cfg.FeatureFlags.EnableArtifacts && rpt.PipelineTask.Artifacts != nil && len(rpt.PipelineTask.Artifacts.Inputs) > 0 {
 		taskArtifacts := facts.State.GetTaskRunsArtifacts()
-		resolvedInputs, resolveErr := resources.ResolveArtifactInputsForTask(rpt.PipelineTask, taskArtifacts)
+		resolvedInputs, resolveErr := resources.ResolveArtifactInputsForTask(rpt.PipelineTask, taskArtifacts, pr.Spec.Artifacts)
 		if resolveErr != nil {
 			logger.Warnf("Failed to resolve artifact inputs for task %s: %v", rpt.PipelineTask.Name, resolveErr)
 		} else if len(resolvedInputs) > 0 {

@@ -320,3 +320,79 @@ spec:
 		t.Fatalf("recorded reference artifact does not match what the step wrote; diff (-want +got): %s", d)
 	}
 }
+
+// TestPipelineArtifactOutputStatus verifies aggregation at PipelineRun completion.
+// @test:execution=serial
+// @test:reason=modifies feature-flags ConfigMap
+func TestPipelineArtifactOutputStatus(t *testing.T) {
+	ctx := t.Context()
+	c, namespace := setup(ctx, t)
+	knativetest.CleanupOnInterrupt(func() { tearDown(ctx, t, c, namespace) }, t.Logf)
+	defer tearDown(ctx, t, c, namespace)
+	if err := updateConfigMap(ctx, c.KubeClient, system.Namespace(), config.GetFeatureFlagsConfigName(), requireEnableArtifactsGate); err != nil {
+		t.Fatalf("enable artifacts: %v", err)
+	}
+	defer func() {
+		_ = updateConfigMap(ctx, c.KubeClient, system.Namespace(), config.GetFeatureFlagsConfigName(), map[string]string{"enable-artifacts": "false"})
+	}()
+
+	const uri = "registry.example.com/myapp@sha256:2222222222222222222222222222222222222222222222222222222222222222"
+	task := parse.MustParseV1Task(t, fmt.Sprintf(`metadata:
+  name: %s
+  namespace: %s
+spec:
+  artifacts:
+    outputs:
+      - name: image
+        type: reference
+        subject: true
+  steps:
+    - name: build
+      image: %s
+      script: echo -n %s > $(outputs.image.uri)
+`, helpers.ObjectNameForTest(t), namespace, getTestImage(busyboxImage), uri))
+	if _, err := c.V1TaskClient.Create(ctx, task, metav1.CreateOptions{}); err != nil {
+		t.Fatalf("create Task: %v", err)
+	}
+	pipeline := parse.MustParseV1Pipeline(t, fmt.Sprintf(`metadata:
+  name: %s
+  namespace: %s
+spec:
+  artifacts:
+    outputs:
+      - name: image
+        from: tasks.build.outputs.image
+  tasks:
+    - name: build
+      taskRef:
+        name: %s
+`, helpers.ObjectNameForTest(t), namespace, task.Name))
+	if _, err := c.V1PipelineClient.Create(ctx, pipeline, metav1.CreateOptions{}); err != nil {
+		t.Fatalf("create Pipeline: %v", err)
+	}
+	name := helpers.ObjectNameForTest(t)
+	run := parse.MustParseV1PipelineRun(t, fmt.Sprintf(`metadata:
+  name: %s
+  namespace: %s
+spec:
+  pipelineRef:
+    name: %s
+`, name, namespace, pipeline.Name))
+	if _, err := c.V1PipelineRunClient.Create(ctx, run, metav1.CreateOptions{}); err != nil {
+		t.Fatalf("create PipelineRun: %v", err)
+	}
+	if err := WaitForPipelineRunState(ctx, c, name, timeout, PipelineRunSucceed(name), "PipelineRunSucceeded", v1Version); err != nil {
+		t.Fatalf("wait: %v", err)
+	}
+	got, err := c.V1PipelineRunClient.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("get PipelineRun: %v", err)
+	}
+	if got.Status.Artifacts == nil || len(got.Status.Artifacts.Outputs) != 1 {
+		t.Fatalf("expected one output, got %#v", got.Status.Artifacts)
+	}
+	output := got.Status.Artifacts.Outputs[0]
+	if output.Name != "image" || len(output.Values) != 1 || output.Values[0].Uri != uri {
+		t.Fatalf("unexpected output: %#v", output)
+	}
+}

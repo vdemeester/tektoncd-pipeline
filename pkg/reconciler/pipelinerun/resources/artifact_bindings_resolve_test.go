@@ -66,6 +66,14 @@ func TestResolveArtifactInputsForTask(t *testing.T) {
 	}
 }
 
+func TestResolvePipelineArtifactOutputs(t *testing.T) {
+	ps := &v1.PipelineSpec{Artifacts: &v1.PipelineArtifactDeclarations{Outputs: []v1.PipelineArtifactOutput{{Name: "image", From: "tasks.build.outputs.image"}}}}
+	got := ResolvePipelineArtifactOutputs(ps, map[string]*v1.Artifacts{"build": {Outputs: []v1.Artifact{{Name: "image", Subject: true, Values: []v1.ArtifactValue{{Uri: "oci://image"}}}}}})
+	if len(got.Outputs) != 1 || got.Outputs[0].Name != "image" || !got.Outputs[0].Subject {
+		t.Fatalf("unexpected outputs: %#v", got)
+	}
+}
+
 func TestResolveArtifactInputsForTask_NoBindings(t *testing.T) {
 	pt := &v1.PipelineTask{Name: "simple"}
 
